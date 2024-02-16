@@ -1,4 +1,5 @@
 <div align="center">
+
 # NVim-Smuggler
 
 *Well, listen up, folks! [`REPLSmuggler.jl`](https://github.com/klafyvel/REPLSmuggler.jl) just slipped into your cozy REPL like a shadow in the night.*
@@ -52,7 +53,7 @@ Using Lazy, you can set the following options (here given with their default val
 ```
 ## Documentation
 
-See [`:help smuggler`](https://github.com/klafyvel/nvim-smuggler/blob/master/doc/smuggler.txt).
+See [`:help smuggler`](https://github.com/klafyvel/nvim-smuggler/blob/main/doc/smuggler.txt).
 
 
 ## Acknowledgements
@@ -63,6 +64,6 @@ See [`:help smuggler`](https://github.com/klafyvel/nvim-smuggler/blob/master/doc
 
 ## License
 
-[MIT](https://choosealicense.com/licenses/mit/)
+NVim-Smuggler is available under the [MIT](https://choosealicense.com/licenses/mit/) license.
 
 
