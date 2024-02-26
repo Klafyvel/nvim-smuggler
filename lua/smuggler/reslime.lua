@@ -7,13 +7,19 @@ local M = {}
 local protocol = require "smuggler.protocol"
 
 function M.send(code, firstline, filename)
-  protocol.bufconfig()
+  local r = protocol.bufconfig()
+  if r == -1 then
+    return -1
+  end
   protocol.send(code, firstline, filename)
 end
 
 -- This is intended to be used as an operator. See `:help :map-operator`.
 function M.send_op(type)
-  protocol.bufconfig()
+  local r = protocol.bufconfig()
+  if r == -1 then
+    return -1
+  end
 
   local row_start = 1
   local text = ""
@@ -38,7 +44,10 @@ function M.send_op(type)
 end
 
 function M.send_range(linestart, linestop)
-  protocol.bufconfig()
+  local r = protocol.bufconfig()
+  if r == -1 then
+    return -1
+  end
   local text = table.concat(
     vim.api.nvim_buf_get_lines(0, linestart - 1, linestop, false),
     "\n"
@@ -47,7 +56,10 @@ function M.send_range(linestart, linestop)
 end
 
 function M.send_lines(count)
-  protocol.bufconfig()
+  local r = protocol.bufconfig()
+  if r == -1 then
+    return -1
+  end
   if count < 1 then
     count = 1
   end
