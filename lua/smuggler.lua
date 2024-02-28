@@ -7,6 +7,8 @@ smuggler.send_range = slime.send_range
 smuggler.send_lines = slime.send_lines
 smuggler.bufconfig = protocol.bufconfig
 smuggler.send_op = slime.send_op
+smuggler.interrupt = protocol.interrupt
+smuggler.exit = protocol.exit
 
 function smuggler.setup(opts)
   opts = opts or {}
@@ -33,6 +35,16 @@ function smuggler.setup(opts)
     smuggler.bufconfig(nil, true)
   end, {
     desc = "(Re)configure the current buffer for smuggling.",
+  })
+  vim.api.nvim_create_user_command("SmuggleInterrupt", function (_)
+    smuggler.interrupt()
+  end, {
+    desc = "Interrupt the current execution",
+  })
+  vim.api.nvim_create_user_command("SmuggleExit", function (_)
+    smuggler.exit()
+  end, {
+    desc = "Exit the current smuggler session.",
   })
 
   -- smugglerappings

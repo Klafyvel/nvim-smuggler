@@ -12,7 +12,7 @@
             See also: https://github.com/klafyvel/REPLSmuggler.jl
 
 
-Author: Hugo "klayvel" Levy-Falk                             *smuggler-author*
+Author: Hugo "klafyvel" Levy-Falk                            *smuggler-author*
 ==============================================================================
 CONTENTS                                                   *smuggler-contents*
 
@@ -49,23 +49,35 @@ also set the |quickfix| list and open the quickfix window.
                         connect to it. If a socket was already configured, it
                         will close the former connection first.
 
+                                                           *:SmuggleInterrupt*
+  :SmuggleInterrupt     Interrupt the current command.
+
+                                                                *:SmuggleExit*
+  :SmuggleExit          Exit the current session.
+
 ==============================================================================
 LUA API                                                     *smuggler-lua-api*
 
 The commands listed in |smuggler-usage| call the following lua functions.
 
-                                                         *smuggler-send-lines*
+                                                     *smuggler-lua-send-lines*
   send_lines(count)     Send `count` lines starting from the current line.
 
-                                                         *smuggler-send-range*
+                                                     *smuggler-lua-send-range*
   send_range(l1, l2)    Send the lines `l1` to `l2`, inclusive and 1-indexed.
 
-                                                          *smuggler-bufconfig*
+                                                      *smuggler-lua-bufconfig*
   bufconfig(bufnbr, force)
                         Configure the buffer `bufnbr`. If `force` is set to
                         `true`, any existing configuration is overwritten. If
                         a connection was active it is also closed. Will start
                         a new connection if needed.
+
+                                                      *smuggler-lua-interrupt*
+  interrupt()           Interrupt the current command.
+
+                                                           *smuggler-lua-exit*
+  exit()                Exit the current session.
 
 The following function can be used to define an operator, see |:map-operator|.
 

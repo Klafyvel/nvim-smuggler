@@ -39,8 +39,11 @@ function M.serialize_requests(handle, queue)
   local msgid = 0
   while not handle:is_closing() do
     local data = queue.get()
+    if data.payload == nil then
+      data.payload = {}
+    end
     config.debug("Sending data: ", data)
-    handle:write(vim.mpack.encode({ 0x00, msgid, "eval", data }))
+    handle:write(vim.mpack.encode({ 0x00, msgid, data.type, data.payload }))
     msgid = msgid + 1
   end
 end
@@ -152,7 +155,21 @@ function M.send(code, firstline, filename)
     filename = vim.api.nvim_buf_get_name(bufnbr)
   end
   nio.run(function ()
-    config.buf[bufnbr].outgoing_queue.put({ filename, firstline, code })
+    config.buf[bufnbr].outgoing_queue.put({ type="eval", payload={filename, firstline, code }})
+  end)
+end
+
+function M.interrupt()
+  local bufnbr = vim.api.nvim_get_current_buf()
+  nio.run(function ()
+    config.buf[bufnbr].outgoing_queue.put({ type="interrupt" })
+  end)
+end
+
+function M.exit()
+  local bufnbr = vim.api.nvim_get_current_buf()
+  nio.run(function ()
+    config.buf[bufnbr].outgoing_queue.put({ type="exit" })
   end)
 end
 
