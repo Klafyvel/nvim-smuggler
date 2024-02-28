@@ -29,8 +29,9 @@ Insert gif or link to demo
 Using Lazy:
 
 ```lua
-{
+return {
   "klafyvel/nvim-smuggler",
+  config=true,
   dependencies = { "nvim-neotest/nvim-nio" },
 }
 ```
@@ -47,7 +48,7 @@ Using Lazy, you can set the following options (here given with their default val
       map_smuggle_range = "<leader>cs", -- Use `<leader>cs` in visual mode to send the current selection.
       map_smuggle_config = "<leader>ce", -- Use `<leader>ce` in normal mode to reconfigure the plugin.
       map_smuggle_operator = "gcs", -- Use `gcs[text object]` to send a text object in normal mode.
-  }
+  },
   dependencies = { "nvim-neotest/nvim-nio" },
 }
 ```

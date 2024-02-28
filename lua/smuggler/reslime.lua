@@ -4,8 +4,7 @@
 -- core of vim-slime for our purpose.
 local M = {}
 
-local protocol = require "protocol"
-local config = require("config")
+local protocol = require "smuggler.protocol"
 
 function M.send(code, firstline, filename)
   protocol.bufconfig()
@@ -54,7 +53,7 @@ function M.send_lines(count)
   end
   local rowcol = vim.api.nvim_win_get_cursor(0)
   local text = table.concat(
-    vim.api.nvim_buf_get_lines(0, rowcol[1] - 1, rowcol[1] + count, false),
+    vim.api.nvim_buf_get_lines(0, rowcol[1] - 1, rowcol[1] - 1 + count, false),
     "\n"
   )
   M.send(text, rowcol[1], vim.api.nvim_buf_get_name(0))

@@ -1,14 +1,14 @@
-local M = {}
+local smuggler = {}
 
-local protocol = require("protocol")
-local slime = require("reslime")
+local protocol = require("smuggler.protocol")
+local slime = require("smuggler.reslime")
 
-M.send_range = slime.send_range
-M.send_lines = slime.send_lines
-M.bufconfig = protocol.bufconfig
-M.send_op = slime.send_op
+smuggler.send_range = slime.send_range
+smuggler.send_lines = slime.send_lines
+smuggler.bufconfig = protocol.bufconfig
+smuggler.send_op = slime.send_op
 
-function M.setup(opts)
+function smuggler.setup(opts)
   opts = opts or {}
   opts.mappings = (opts.mappings == nil) or opts.mappings
   opts.map_smuggle = (opts.map_smuggle == nil) and "<leader>cs" or opts.map_smuggle
@@ -18,24 +18,24 @@ function M.setup(opts)
 
   -- Define commands
   vim.api.nvim_create_user_command("SmuggleRange", function(cmdargs)
-    M.send_range(cmdargs.line1, cmdargs.line2)
+    smuggler.send_range(cmdargs.line1, cmdargs.line2)
   end, {
     desc = "Send a range of Julia code to the REPL.",
     range = true,
   })
   vim.api.nvim_create_user_command("Smuggle", function(cmdargs)
-    M.send_lines(cmdargs.count)
+    smuggler.send_lines(cmdargs.count)
   end, {
     desc = "Send Julia code to the REPL.",
     count = true,
   })
   vim.api.nvim_create_user_command("SmuggleConfig", function(_)
-    M.bufconfig(nil, true)
+    smuggler.bufconfig(nil, true)
   end, {
     desc = "(Re)configure the current buffer for smuggling.",
   })
 
-  -- Mappings
+  -- smugglerappings
   if opts.mappings then
     vim.api.nvim_set_keymap("n", opts.map_smuggle, "<Cmd>Smuggle<cr>", {
       desc = "Send <count> lines to the REPL."
@@ -52,4 +52,4 @@ function M.setup(opts)
   end
 end
 
-return M
+return smuggler
