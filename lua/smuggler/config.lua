@@ -4,15 +4,13 @@ local M = {}
 -- M.buf_config_semaphore = nio.control.semaphore()
 M.buf = {}
 
-M.debug=true
+M.debug_enabled=true
 M.debug_restart=true
 
-if M.debug then
-    M.log_fh = io.open("smuggler.log", M.debug_restart and 'w' or 'a')
-end
+M.log_fh = io.open("smuggler.log", M.debug_restart and 'w' or 'a')
 
 function M.debug(...)
-  if M.debug then
+  if M.debug_enabled then
     local objects = {}
     for i = 1, select('#', ...) do
       local v = select(i, ...)

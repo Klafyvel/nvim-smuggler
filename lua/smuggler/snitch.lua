@@ -1,6 +1,6 @@
 local M = {}
 
-local config= require("config")
+local config= require("smuggler.config")
 local nio=require("nio")
 
 function M.snitch(bufnbr, response)
@@ -22,8 +22,8 @@ function M.snitch(bufnbr, response)
       goto continue
     end
     diagnostics[#diagnostics+1] =  {
-      lnum = stackrow[2],
-      col = 1,
+      lnum = stackrow[2]-1,
+      col = 0,
       message = exception_text .. " in " .. stackrow[3],
       severity = vim.diagnostic.severity.ERROR,
       source = "Julia REPL",

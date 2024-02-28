@@ -2,8 +2,8 @@ local M = {}
 
 local uv = vim.loop
 local nio = require("nio")
-local config = require("config")
-local snitch = require("snitch")
+local config = require("smuggler.config")
+local snitch = require("smuggler.snitch")
 
 function M.socketsdir()
   if vim.fn.has("unix") or vim.fn.has("mac") then
