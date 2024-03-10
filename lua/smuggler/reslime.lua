@@ -5,6 +5,7 @@
 local M = {}
 
 local protocol = require "smuggler.protocol"
+local config = require "smuggler.config"
 
 function M.send(code, firstline, filename)
   local r = protocol.bufconfig()
@@ -24,6 +25,7 @@ function M.send_op(type)
   local row_start = 1
   local text = ""
 
+  config.debug(type)
   if type == "line" then
     row_start = vim.api.nvim_buf_get_mark(0, "[")[1]
     local row_stop = vim.api.nvim_buf_get_mark(0, "]")[1]
@@ -31,14 +33,18 @@ function M.send_op(type)
   elseif type == "block" then
     -- not implemented yet.
   else -- type == "char"
+    config.debug("Sending data using operator as char ")
     local tmp = vim.api.nvim_buf_get_mark(0, "[")
+    config.debug("start mark is ", tmp)
     row_start = tmp[1]
     local col_start = tmp[2]
     tmp = vim.api.nvim_buf_get_mark(0, "]")
-    local row_stop = tmp[1]
-    local col_stop = tmp[2]
-    text = table.concat(vim.api.nvim_buf_get_text(0, row_start, col_start, row_stop, col_stop), "\n")
+    config.debug("stop mark is ", tmp)
+    local row_stop = tmp[1]-1
+    local col_stop = tmp[2]+1
+    text = table.concat(vim.api.nvim_buf_get_text(0, row_start-1, col_start, row_stop, col_stop, {}), "\n")
   end
+  config.debug({row_start=row_start})
 
   M.send(text, row_start, vim.api.nvim_buf_get_name(0))
 end
