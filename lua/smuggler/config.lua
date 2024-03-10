@@ -4,7 +4,7 @@ local M = {}
 -- M.buf_config_semaphore = nio.control.semaphore()
 M.buf = {}
 
-M.debug_enabled=true
+M.debug_enabled=false
 M.debug_restart=true
 
 M.log_fh = io.open("smuggler.log", M.debug_restart and 'w' or 'a')
