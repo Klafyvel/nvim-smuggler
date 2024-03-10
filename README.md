@@ -12,7 +12,7 @@ Neo-Vim companion plugin for [REPLSmuggler.jl](https://github.com/klafyvel/REPLS
 
 ## Demo
 
-Insert gif or link to demo
+[![asciicast](https://asciinema.org/a/W6RTJeVzRL3SvUIHfuauLGDF7.svg)](https://asciinema.org/a/W6RTJeVzRL3SvUIHfuauLGDF7)
 
 ## Features
 
