@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.2](https://github.com/Klafyvel/nvim-smuggler/compare/v0.1.1...v0.1.2) (2024-03-10)
+
+
+### Bug Fixes
+
+* Line numbering when using the operator mode. ([7510439](https://github.com/Klafyvel/nvim-smuggler/commit/75104394369f76efd995092edd28aeb8da165301))
+* remove debug prints. ([48ff11c](https://github.com/Klafyvel/nvim-smuggler/commit/48ff11c7ff88649c72ee8081be1dd9c8c6e1c2b7))
+
 ## 0.1.1 (2024-02-28)
 
 
