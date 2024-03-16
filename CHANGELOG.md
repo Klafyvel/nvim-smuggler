@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.0](https://github.com/Klafyvel/nvim-smuggler/compare/v0.1.2...v0.2.0) (2024-03-16)
+
+
+### Features
+
+* add commands to toggle diagnostics. ([4ee73e2](https://github.com/Klafyvel/nvim-smuggler/commit/4ee73e252e355770fbf3f668c3e8b1f8002d4dd0))
+* Add demo to README.md ([124cd3d](https://github.com/Klafyvel/nvim-smuggler/commit/124cd3d9f81a9d018132eb87d358ef60c9b9114d))
+
+
+### Bug Fixes
+
+* Do not create the smuggler.log file when we are not debugging. ([f6465df](https://github.com/Klafyvel/nvim-smuggler/commit/f6465dfc463804571a680da69f83c27aa1a88006))
+
 ## [0.1.2](https://github.com/Klafyvel/nvim-smuggler/compare/v0.1.1...v0.1.2) (2024-03-10)
 
 
