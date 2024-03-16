@@ -55,6 +55,18 @@ also set the |quickfix| list and open the quickfix window.
                                                                 *:SmuggleExit*
   :SmuggleExit          Exit the current session.
 
+                                                     *:SmuggleHideDiagnostics*
+  :SmuggleHideDiagnostics
+                        Hide smuggler's diagnostics.
+
+                                                     *:SmuggleShowDiagnostics*
+  :SmuggleShowDiagnostics
+                        Show smuggler's diagnostics.
+
+                                                    *:SmuggleResetDiagnostics*
+  :SmuggleResetDiagnostics
+                        Reset smuggler's diagnostics.
+
 ==============================================================================
 LUA API                                                     *smuggler-lua-api*
 

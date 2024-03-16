@@ -2,6 +2,7 @@ local smuggler = {}
 
 local protocol = require("smuggler.protocol")
 local slime = require("smuggler.reslime")
+local toggle_diagnostics = require("smuggler.toggle_diagnostics")
 
 smuggler.send_range = slime.send_range
 smuggler.send_lines = slime.send_lines
@@ -45,6 +46,21 @@ function smuggler.setup(opts)
     smuggler.exit()
   end, {
     desc = "Exit the current smuggler session.",
+  })
+  vim.api.nvim_create_user_command("SmuggleHideDiagnostics", function (_)
+    toggle_diagnostics.hide()
+  end, {
+    desc = "Hide smuggler's diagnostics.",
+  })
+  vim.api.nvim_create_user_command("SmuggleShowDiagnostics", function (_)
+    toggle_diagnostics.show()
+  end, {
+    desc = "Show smuggler's diagnostics.",
+  })
+  vim.api.nvim_create_user_command("SmuggleResetDiagnostics", function (_)
+    toggle_diagnostics.reset()
+  end, {
+    desc = "Reset smuggler's diagnostics.",
   })
 
   -- smugglerappings
