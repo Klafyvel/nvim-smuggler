@@ -86,10 +86,17 @@ function M.treat_incoming(bufnbr, queue)
     config.debug("Treating: ", value)
     if value == nil then
       break
-    elseif value[1] == 2 then -- Received a notification, it is the handshake.
-      -- TODO: perform version control here?
-      config.debug("Received Handshake. ", value)
-      config.buf[bufnbr].initialized = true
+    elseif value[1] == 2 then -- Received a notification.
+      if value[2] == "handshake" then
+        -- TODO: perform version control here?
+        config.debug("Received Handshake. ", value)
+        config.buf[bufnbr].initialized = true
+      elseif value[2] == "diagnostic" then
+        config.debug("Oh, my. A diagnostic. ")
+        snitch.snitch(bufnbr, value)
+      else 
+        error("Unexpected notification call." .. vim.inspect(value))
+      end
     elseif value[1] == 1 then -- This is an answer.
       config.debug("Received Response")
       snitch.snitch(bufnbr, value)
@@ -154,6 +161,9 @@ function M.send(code, firstline, filename)
   if filename == nil then
     filename = vim.api.nvim_buf_get_name(bufnbr)
   end
+  -- Clear previous diagnostics
+  local namespace = nio.api.nvim_create_namespace("smuggler")
+  vim.diagnostic.reset(namespace, bufnbr)
   nio.run(function ()
     config.buf[bufnbr].outgoing_queue.put({ type="eval", payload={filename, firstline, code }})
   end)
