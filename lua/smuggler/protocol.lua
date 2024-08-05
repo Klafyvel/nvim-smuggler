@@ -129,12 +129,15 @@ function M.runclient(bufnbr, socket_path)
   nio.run(function() M.serialize_requests(socket, bufconfig.outgoing_queue) end)
 end
 
-function M.bufconfig(bufnbr, force)
+function M.bufconfig(bufnbr, force, settings)
   if bufnbr == nil then
     bufnbr = vim.api.nvim_get_current_buf()
   end
   if force == nil then
     force = false
+  end
+  if settings == nil then
+    settings = {}
   end
 
   local current_config = config.buf[bufnbr]
@@ -153,6 +156,7 @@ function M.bufconfig(bufnbr, force)
     return -1
   end
   nio.run(function() M.runclient(vim.api.nvim_get_current_buf(), socket_path) end)
+  M.configure_session(settings)
   return 0
 end
 
@@ -180,6 +184,13 @@ function M.exit()
   local bufnbr = vim.api.nvim_get_current_buf()
   nio.run(function ()
     config.buf[bufnbr].outgoing_queue.put({ type="exit" })
+  end)
+end
+
+function M.configure_session(settings)
+  local bufnbr = vim.api.nvim_get_current_buf()
+  nio.run(function ()
+    config.buf[bufnbr].outgoing_queue.put({ type="configure", payload={settings} })
   end)
 end
 

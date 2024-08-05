@@ -55,6 +55,16 @@ also set the |quickfix| list and open the quickfix window.
                                                                 *:SmuggleExit*
   :SmuggleExit          Exit the current session.
 
+                                                        *:SmuggleEvalByBlocks*
+  :SmuggleEvalByBlocks  Set evaluation mode to "blocks", which means if you
+                        send multiple lines at once, they will be evaluated as
+                        one single REPL entry.
+                                                     *:SmuggleEvalByStatement*
+  :SmuggleEvalByStatement
+                        Set evaluation mode to "statement", which means if you
+                        send multiple lines at once, they will be broken down
+                        in toplevel statements and evaluated one by one.
+
                                                      *:SmuggleHideDiagnostics*
   :SmuggleHideDiagnostics
                         Hide smuggler's diagnostics.
@@ -90,6 +100,12 @@ The commands listed in |smuggler-usage| call the following lua functions.
 
                                                            *smuggler-lua-exit*
   exit()                Exit the current session.
+
+                                              *smuggler-lua-configure_session*
+  configure_session(settings)
+                        Configure the current session with the given settings.
+                        The available settings are defined in
+                        REPLSmuggler.jl's protocol.
 
 The following function can be used to define an operator, see |:map-operator|.
 
