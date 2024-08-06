@@ -137,7 +137,7 @@ function M.bufconfig(bufnbr, force, settings)
     force = false
   end
   if settings == nil then
-    settings = {}
+    settings = {evalbyblocks = config.eval_by_blocks }
   end
 
   local current_config = config.buf[bufnbr]

@@ -11,6 +11,7 @@ smuggler.send_op = slime.send_op
 smuggler.interrupt = protocol.interrupt
 smuggler.exit = protocol.exit
 smuggler.configure_session = protocol.configure_session
+smuggler.config = require("smuggler.config")
 
 function smuggler.setup(opts)
   opts = opts or {}
@@ -22,6 +23,7 @@ function smuggler.setup(opts)
   if opts.eval_by_blocks == nil then
     opts.eval_by_blocks = false
   end
+  smuggler.config.eval_by_blocks = opts.eval_by_blocks
 
   -- Define commands
   vim.api.nvim_create_user_command("SmuggleRange", function(cmdargs)
@@ -37,7 +39,7 @@ function smuggler.setup(opts)
     count = true,
   })
   vim.api.nvim_create_user_command("SmuggleConfig", function(_)
-    smuggler.bufconfig(nil, true, { evalbyblocks = opts.eval_by_blocks })
+    smuggler.bufconfig(nil, true, { evalbyblocks = smuggler.config.eval_by_blocks })
   end, {
     desc = "(Re)configure the current buffer for smuggling.",
   })
