@@ -48,6 +48,7 @@ Using Lazy, you can set the following options (here given with their default val
       map_smuggle_range = "<leader>cs", -- Use `<leader>cs` in visual mode to send the current selection.
       map_smuggle_config = "<leader>ce", -- Use `<leader>ce` in normal mode to reconfigure the plugin.
       map_smuggle_operator = "gcs", -- Use `gcs[text object]` to send a text object in normal mode.
+      eval_by_blocks = false, -- Configure each new session eval by block attribute.
   },
   dependencies = { "nvim-neotest/nvim-nio" },
 }
