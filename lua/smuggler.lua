@@ -10,6 +10,7 @@ smuggler.bufconfig = protocol.bufconfig
 smuggler.send_op = slime.send_op
 smuggler.interrupt = protocol.interrupt
 smuggler.exit = protocol.exit
+smuggler.configure_session = protocol.configure_session
 
 function smuggler.setup(opts)
   opts = opts or {}
@@ -18,6 +19,9 @@ function smuggler.setup(opts)
   opts.map_smuggle_range = (opts.map_smuggle_range == nil) and "<leader>cs" or opts.map_smuggle_range
   opts.map_smuggle_config = (opts.map_smuggle_config == nil) and "<leader>ce" or opts.map_smuggle_config
   opts.map_smuggle_operator = (opts.map_smuggle_operator == nil) and "gcs" or opts.map_smuggle_operator
+  if opts.eval_by_blocks == nil then
+    opts.eval_by_blocks = false
+  end
 
   -- Define commands
   vim.api.nvim_create_user_command("SmuggleRange", function(cmdargs)
@@ -33,7 +37,7 @@ function smuggler.setup(opts)
     count = true,
   })
   vim.api.nvim_create_user_command("SmuggleConfig", function(_)
-    smuggler.bufconfig(nil, true)
+    smuggler.bufconfig(nil, true, { evalbyblocks = opts.eval_by_blocks })
   end, {
     desc = "(Re)configure the current buffer for smuggling.",
   })
@@ -46,6 +50,16 @@ function smuggler.setup(opts)
     smuggler.exit()
   end, {
     desc = "Exit the current smuggler session.",
+  })
+  vim.api.nvim_create_user_command("SmuggleEvalByBlocks", function(_)
+    smuggler.configure_session({ evalbyblocks = true })
+  end, {
+    desc = "Configure the session to evaluate entries by block.",
+  })
+  vim.api.nvim_create_user_command("SmuggleEvalByStatement", function(_)
+    smuggler.configure_session({ evalbyblocks = false })
+  end, {
+    desc = "Configure the session to evaluate entries by toplevel statements.",
   })
   vim.api.nvim_create_user_command("SmuggleHideDiagnostics", function (_)
     toggle_diagnostics.hide()
