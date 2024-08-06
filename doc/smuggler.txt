@@ -155,6 +155,7 @@ given with their default value): >
         map_smuggle_range = "<leader>cs", -- For SmuggleRange in visual mode.
         map_smuggle_config = "<leader>ce", -- SmuggleConfig in normal mode.
         map_smuggle_operator = "gcs", -- SmuggleOperator in normal mode.
+        eval_by_blocks = false, -- Configure each new session eval by block attribute.
     },
     dependencies = { "nvim-neotest/nvim-nio" },
   }
