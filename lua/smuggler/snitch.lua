@@ -15,7 +15,7 @@ function M.snitch(bufnbr, response)
   local namespace = nio.api.nvim_create_namespace("smuggler")
   config.debug("namespace is", namespace)
   local diagnostics = vim.diagnostic.get(bufnbr, {namespace=namespace})
-  for _, stackrow in ipairs(stacktrace) do
+  for stackidx, stackrow in ipairs(stacktrace) do
     config.debug("Doing stacktrace element: ", stackrow)
     if vim.api.nvim_buf_get_name(bufnbr) ~= stackrow[1] then
       goto continue
@@ -23,7 +23,7 @@ function M.snitch(bufnbr, response)
     diagnostics[#diagnostics+1] =  {
       lnum = stackrow[2]-1,
       col = 0,
-      message = exception_text .. " in " .. stackrow[3],
+      message = "[" .. stackidx .. "] " .. exception_text .. " in " .. stackrow[3],
       severity = vim.diagnostic.severity.ERROR,
       source = "Julia REPL",
     }
