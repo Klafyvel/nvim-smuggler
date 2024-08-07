@@ -3,11 +3,8 @@ local M = {}
 local config= require("smuggler.config")
 local nio=require("nio")
 
-function M.snitch(bufnbr, response)
-  config.debug("Snitching :D ", response)
-  if response[3] == nil then
-    return
-  end
+function M.snitch_error(bufnbr, response)
+  config.debug("Snitching error")
   local exception_text = response[3][2]
   config.debug("text is", exception_text)
   local stacktrace = response[3][3]
@@ -36,6 +33,38 @@ function M.snitch(bufnbr, response)
     title="REPL error: " .. exception_text,
   })
   vim.diagnostic.show(namespace, bufnbr)
+end
+
+function M.snitch_result(bufnbr, response)
+  local line_length = 80
+  config.debug("Snitching result")
+  local linenumber = response[4][1]
+  config.debug("linenumber", linenumber)
+  local output = response[4][2]
+  config.debug("output", output)
+  local namespace = nio.api.nvim_create_namespace("smuggler")
+  local lines = {}
+  for line in string.gmatch(output, "([^\n]+)") do
+    if string.len(line) < line_length then
+        line = line .. string.rep(" ", line_length - string.len(line))
+    end
+    lines[#lines+1] = {{line, "DiagnosticVirtualTextInfo"}}
+  end
+  config.debug("lines", lines)
+  vim.api.nvim_buf_set_extmark(bufnbr, namespace, linenumber-1, 0, {
+    virt_lines = lines,
+    hl_eol = true,
+    })
+  config.debug("done", lines)
+end
+
+function M.snitch(bufnbr, response)
+  config.debug("Snitching :D ", response)
+  if response[3] == vim.NIL then
+      return M.snitch_result(bufnbr, response)
+  else
+      return M.snitch_error(bufnbr, response)
+  end
 end
 
 return M
