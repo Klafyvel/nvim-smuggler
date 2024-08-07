@@ -4,7 +4,7 @@ local M = {}
 -- M.buf_config_semaphore = nio.control.semaphore()
 M.buf = {}
 
-M.debug_enabled=false
+M.debug_enabled=true
 M.debug_restart=true
 
 if M.debug_enabled then
