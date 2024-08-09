@@ -27,7 +27,10 @@ function smuggler.setup(opts)
 
   -- Define commands
   vim.api.nvim_create_user_command("SmuggleRange", function(cmdargs)
-    smuggler.send_range(cmdargs.line1, cmdargs.line2)
+    local startpos = vim.fn.getpos("'<") 
+    local endpos = vim.fn.getpos("'>")
+    vmode = vim.fn.visualmode()
+    smuggler.send_range(cmdargs.line1, cmdargs.line2,startpos[3],endpos[3],vmode)
   end, {
     desc = "Send a range of Julia code to the REPL.",
     range = true,

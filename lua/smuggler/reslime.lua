@@ -49,15 +49,22 @@ function M.send_op(type)
   M.send(text, row_start, vim.api.nvim_buf_get_name(0))
 end
 
-function M.send_range(linestart, linestop)
+function M.send_range(linestart, linestop, colstart, colstop , vmode)
   local r = protocol.bufconfig()
   if r == -1 then
     return -1
   end
-  local text = table.concat(
+  if vmode=='v' then
+   local text = table.concat(
+    vim.api.nvim_buf_get_text(0, linestart - 1,colstart-1, linestop-1, colstop, {}),
+    "\n"
+  )
+  elseif vmode=='V' then
+   local text = table.concat(
     vim.api.nvim_buf_get_lines(0, linestart - 1, linestop, false),
     "\n"
   )
+  end
   M.send(text, linestart, vim.api.nvim_buf_get_name(0))
 end
 
