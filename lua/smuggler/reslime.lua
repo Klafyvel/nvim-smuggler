@@ -54,17 +54,19 @@ function M.send_range(linestart, linestop, colstart, colstop , vmode)
   if r == -1 then
     return -1
   end
+  local text = nil
   if vmode=='v' then
-   local text = table.concat(
+   text = table.concat(
     vim.api.nvim_buf_get_text(0, linestart - 1,colstart-1, linestop-1, colstop, {}),
     "\n"
   )
   elseif vmode=='V' then
-   local text = table.concat(
+   text = table.concat(
     vim.api.nvim_buf_get_lines(0, linestart - 1, linestop, false),
     "\n"
   )
   end
+  config.debug(text)
   M.send(text, linestart, vim.api.nvim_buf_get_name(0))
 end
 

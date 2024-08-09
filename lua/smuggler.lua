@@ -27,6 +27,7 @@ function smuggler.setup(opts)
 
   -- Define commands
   vim.api.nvim_create_user_command("SmuggleRange", function(cmdargs)
+    smuggler.config.debug(cmdargs)
     local startpos = vim.fn.getpos("'<") 
     local endpos = vim.fn.getpos("'>")
     vmode = vim.fn.visualmode()
@@ -82,7 +83,7 @@ function smuggler.setup(opts)
     desc = "Reset smuggler's diagnostics.",
   })
 
-  -- smugglerappings
+  -- smuggler mappings
   if opts.mappings then
     vim.api.nvim_set_keymap("n", opts.map_smuggle, "<Cmd>Smuggle<cr>", {
       desc = "Send <count> lines to the REPL."
