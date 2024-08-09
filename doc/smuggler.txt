@@ -40,6 +40,8 @@ also set the |quickfix| list and open the quickfix window.
 
                                                                *:SmuggleRange*
   :<range>SmuggleRange  Send <range> to the REPL.
+                                                              *:SmuggleVisual*
+  :SmuggleVisual        Send the visual selection to the REPL.
 
                                                               *:SmuggleConfig*
   :SmuggleConfig        (Re)configure the current buffer. Note that

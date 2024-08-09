@@ -60,7 +60,7 @@ function M.send_range(linestart, linestop, colstart, colstop , vmode)
     vim.api.nvim_buf_get_text(0, linestart - 1,colstart-1, linestop-1, colstop, {}),
     "\n"
   )
-  elseif vmode=='V' then
+  elseif vmode=='V' or vmode==nil then
    text = table.concat(
     vim.api.nvim_buf_get_lines(0, linestart - 1, linestop, false),
     "\n"
