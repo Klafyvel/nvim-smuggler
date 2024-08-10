@@ -32,6 +32,16 @@ function smuggler.setup(opts)
     desc = "Send a range of Julia code to the REPL.",
     range = true,
   })
+  vim.api.nvim_create_user_command("SmuggleVisual", function(cmdargs)
+    local startpos = vim.fn.getpos("'<") 
+    local endpos = vim.fn.getpos("'>")
+    vmode = vim.fn.visualmode()
+    smuggler.send_range(cmdargs.line1, cmdargs.line2,startpos[3],endpos[3],vmode)
+  end, {
+    desc = "Send the visual selection to the REPL.",
+    range = true, -- Allow range for convenience (calls from visual mode) even 
+                  -- if they are ignored.
+  })
   vim.api.nvim_create_user_command("Smuggle", function(cmdargs)
     smuggler.send_lines(cmdargs.count)
   end, {
@@ -79,7 +89,7 @@ function smuggler.setup(opts)
     desc = "Reset smuggler's diagnostics.",
   })
 
-  -- smugglerappings
+  -- smuggler mappings
   if opts.mappings then
     vim.api.nvim_set_keymap("n", opts.map_smuggle, "<Cmd>Smuggle<cr>", {
       desc = "Send <count> lines to the REPL."
