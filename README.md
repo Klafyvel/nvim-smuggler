@@ -26,6 +26,11 @@ Neo-Vim companion plugin for [REPLSmuggler.jl](https://github.com/klafyvel/REPLS
 
 ## Installation
 
+Using rocks.nvim:
+```
+:Rocks install nvim-smuggler
+```
+
 Using Lazy:
 
 ```lua
