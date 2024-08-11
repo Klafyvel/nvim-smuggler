@@ -4,7 +4,7 @@
 
 *Well, listen up, folks! [`REPLSmuggler.jl`](https://github.com/klafyvel/REPLSmuggler.jl) just slipped into your cozy REPL like a shadow in the night.*
 
-[Demo](#Demo) | [Features](#Features) | [Installation](#Installation) | [Configuration](#Configuration) | [Documentation](#Documentation) | [Acknowledgements](#Acknowledgements) | [License](#License)
+[Demo](#Demo) | [Features](#Features) | [Installation](#Installation) | [Configuration](#Configuration) | [Documentation](#Documentation) | [Acknowledgements](#Acknowledgements) | [License](#License) | [![LuaRocks](https://img.shields.io/luarocks/v/Klafyvel/nvim-smuggler?logo=lua&color=purple)](https://luarocks.org/modules/Klafyvel/nvim-smuggler)
 </div>
 
 Neo-Vim companion plugin for [REPLSmuggler.jl](https://github.com/klafyvel/REPLSmuggler.jl). Send code to your Julia REPL, and get Neo-Vim diagnostics in return.
