@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.3.0](https://github.com/Klafyvel/nvim-smuggler/compare/v0.2.0...v0.3.0) (2024-08-11)
+
+
+### Features
+
+* **diagnostics:** Include frame number in stacktrace diagnostics ([44722c0](https://github.com/Klafyvel/nvim-smuggler/commit/44722c00b887d4a38ed651d4c8c0f52a401261c2))
+* **protocol:** Handle protocol v0.2 (diagnostics in notifications). ([dd8b3e7](https://github.com/Klafyvel/nvim-smuggler/commit/dd8b3e798aba504c40a67b68f4b107a4ac9acd5c))
+* **protocol:** Implement protocol v0.3 ([f89e206](https://github.com/Klafyvel/nvim-smuggler/commit/f89e20659bb956e17b7a7cd2cdb4493d6ec53477))
+* **send-range:** Make block visal selection work. ([8723d8c](https://github.com/Klafyvel/nvim-smuggler/commit/8723d8ca8af1e4ad680f9951022f41976545e6c9))
+* **smuggle-range:** Split visual selection send and range send. ([51bdbff](https://github.com/Klafyvel/nvim-smuggler/commit/51bdbffe8d11c67adc0bf62d27cbd85af90b265f))
+* Update release-please.yml ([9fc79fb](https://github.com/Klafyvel/nvim-smuggler/commit/9fc79fb97517b1a28ba35db1398604037b567df2))
+
+
+### Bug Fixes
+
+* **config:** Make bufconfig use the defined default configuration. ([cebcbc6](https://github.com/Klafyvel/nvim-smuggler/commit/cebcbc6f985ab7b3ed872825ab1ad00491eed443))
+* **send-range:** Fix variable closure error when fetching selected text. ([97c7b55](https://github.com/Klafyvel/nvim-smuggler/commit/97c7b5591ce5687664ed8f3d0f8b27e4a0d8d08b))
+
 ## [0.2.0](https://github.com/Klafyvel/nvim-smuggler/compare/v0.1.2...v0.2.0) (2024-03-16)
 
 
