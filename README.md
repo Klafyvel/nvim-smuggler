@@ -43,21 +43,39 @@ return {
     
 ## Configuration
 
-Using Lazy, you can set the following options (here given with their default values):
+The plugin is initialized through its `setup` function, which takes a table as
+its sole argument. The options are the following (given with their default
+values): 
 ```lua
-{
-  "klafyvel/nvim-smuggler",
-  opts = {
-      mappings = true, -- set to false to disable all mappings.
-      map_smuggle = "<leader>cs", -- Use `[count]<leader>cs` in normal mode to send count lines.
-      map_smuggle_range = "<leader>cs", -- Use `<leader>cs` in visual mode to send the current selection.
-      map_smuggle_config = "<leader>ce", -- Use `<leader>ce` in normal mode to reconfigure the plugin.
-      map_smuggle_operator = "gcs", -- Use `gcs[text object]` to send a text object in normal mode.
-      eval_by_blocks = false, -- Configure each new session eval by block attribute.
-  },
-  dependencies = { "nvim-neotest/nvim-nio" },
-}
+  {
+    mappings = true, -- set to false to disable all mappings.
+    map_smuggle = "<leader>cs", -- Mapping for Smuggle in normal mode.
+    map_smuggle_range = "<leader>cs", -- For SmuggleRange in visual mode.
+    map_smuggle_config = "<leader>ce", -- SmuggleConfig in normal mode.
+    map_smuggle_operator = "gcs", -- SmuggleOperator in normal mode.
+    eval_by_blocks = false, -- Configure each new session eval by block attribute.
+  }
 ```
+
+If you use the `rocks.nvim` package manager, you can use the
+[`rocks-config.nvim`](https://github.com/nvim-neorocks/rocks-config.nvim) package to call `setup` in
+`.config/nvim/lua/plugins/smuggler.lua`: 
+```lua
+  require('smuggler').setup({ ... })
+```
+
+If you use the `lazy.nvim` package manager, you can provide the configuration
+directly with the installation: 
+```lua
+  {
+    "klafyvel/nvim-smuggler",
+    opts = {
+        ...
+    },
+    dependencies = { "nvim-neotest/nvim-nio" },
+  }
+```
+
 ## Documentation
 
 See [`:help smuggler`](https://github.com/klafyvel/nvim-smuggler/blob/main/doc/smuggler.txt).
