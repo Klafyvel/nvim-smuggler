@@ -24,15 +24,20 @@ function M.getavailablesockets()
   return res
 end
 
-function M.choosesocket()
+function M.choosesocket(settings)
   local sockets = M.getavailablesockets()
   local choice = nil
+  local buf = vim.api.nvim_get_current_buf()
   vim.ui.select(sockets, {
     prompt = 'Select a socket:',
   }, function(c)
-    choice = c
+      socket_path = c
+    if socket_path == nil then
+      return -1
+    end
+    nio.run(function() M.runclient(buf, socket_path) end)
+    M.configure_session(settings)
   end)
-  return choice
 end
 
 function M.serialize_requests(handle, queue)
@@ -151,12 +156,7 @@ function M.bufconfig(bufnbr, force, settings)
     end
   end
 
-  local socket_path = M.choosesocket()
-  if socket_path == nil then
-    return -1
-  end
-  nio.run(function() M.runclient(vim.api.nvim_get_current_buf(), socket_path) end)
-  M.configure_session(settings)
+  M.choosesocket(settings)
   return 0
 end
 
