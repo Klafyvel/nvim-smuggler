@@ -1,7 +1,4 @@
 local M = {}
--- local nio = require("nio")
---
--- M.buf_config_semaphore = nio.control.semaphore()
 M.buf = {}
 
 M.debug_enabled=true

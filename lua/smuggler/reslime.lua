@@ -57,7 +57,7 @@ function M.send_op(type)
   end
   config.debug({row_start=row_start})
 
-  M.send(text, row_start, vim.api.nvim_buf_get_name(0))
+  protocol.send(text, row_start, vim.api.nvim_buf_get_name(0))
 end
 
 function M.send_range(linestart, linestop, colstart, colstop , vmode)
@@ -83,7 +83,7 @@ function M.send_range(linestart, linestop, colstart, colstop , vmode)
     )
   end
   config.debug(text)
-  M.send(text, linestart, vim.api.nvim_buf_get_name(0))
+  protocol.send(text, linestart, vim.api.nvim_buf_get_name(0))
 end
 
 function M.send_lines(count)
@@ -99,7 +99,7 @@ function M.send_lines(count)
     vim.api.nvim_buf_get_lines(0, rowcol[1] - 1, rowcol[1] - 1 + count, false),
     "\n"
   )
-  M.send(text, rowcol[1], vim.api.nvim_buf_get_name(0))
+  protocol.send(text, rowcol[1], vim.api.nvim_buf_get_name(0))
 end
 
 return M
