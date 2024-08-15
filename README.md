@@ -48,11 +48,12 @@ its sole argument. The options are the following (given with their default
 values): 
 ```lua
   {
-    mappings = true, -- set to false to disable all mappings.
-    map_smuggle = "<leader>cs", -- Mapping for Smuggle in normal mode.
-    map_smuggle_range = "<leader>cs", -- For SmuggleRange in visual mode.
-    map_smuggle_config = "<leader>ce", -- SmuggleConfig in normal mode.
-    map_smuggle_operator = "gcs", -- SmuggleOperator in normal mode.
+    mappings = { -- set to false to disable all mappings.
+      smuggle = "<leader>cs", -- Mapping for Smuggle in normal mode.
+      smuggle_range = "<leader>cs", -- For SmuggleRange in visual mode.
+      smuggle_config = "<leader>ce", -- SmuggleConfig in normal mode.
+      smuggle_operator = "gcs", -- SmuggleOperator in normal mode.
+    },
     eval_by_blocks = false, -- Configure each new session eval by block attribute.
   }
 ```
