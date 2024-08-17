@@ -122,8 +122,12 @@ end
 function ui.init_ui(opts)
 	opts.evaluated_hl = (opts.evaluated_hl == nil) and "MoreMsg" or opts.evaluated_hl
 	opts.invalidated_hl = (opts.invalidated_hl == nil) and "WarningMsg" or opts.invalidated_hl
+	opts.result_line_length = (opts.result_line_length == nil) and 80 or opts.result_line_length
+	opts.result_hl_group = (opts.result_hl_group == nil) and "DiagnosticVirtualTextInfo"  or opts.result_hl_group
 	config.evaluated_hl = opts.evaluated_hl
 	config.invalidated_hl = opts.invalidated_hl
+    config.result_line_length = opts.result_line_length
+    config.result_hl_group = opts.result_hl_group
 end
 
 function ui.remove_chunk_highlights(bufnbr)
@@ -185,7 +189,7 @@ end
 
 function ui.show_one_result(bufnbr, result)
 	config.debug("Showing bufnbr=" .. bufnbr .. ", result=" .. vim.inspect(result))
-	local line_length = 80
+	local line_length = config.result_line_length
 	local msgid = result.msgid
 	config.debug("Got msgif=" .. msgid)
 	local chunk = config.buf[bufnbr].evaluated_chunks[msgid]
@@ -206,7 +210,7 @@ function ui.show_one_result(bufnbr, result)
 		if string.len(line) < line_length then
 			line = line .. string.rep(" ", line_length - string.len(line))
 		end
-		lines[#lines + 1] = { { line, "DiagnosticVirtualTextInfo" } }
+		lines[#lines + 1] = { { line, config.result_hl_group} }
 	end
 	local namespace = nio.api.nvim_create_namespace("smuggler")
 	result.mark_id = nio.api.nvim_buf_set_extmark(bufnbr, namespace, firstline, 0, { virt_lines = lines })

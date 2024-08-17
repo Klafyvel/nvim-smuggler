@@ -184,6 +184,8 @@ values): >
     eval_by_blocks = false, -- Configure each new session eval by block attribute.
     evaluated_hl = "MoreMsg", -- highlight group for evaluated chunks.
     invalidated_hl = "WarningMsg", -- highlight group for invalidated evaluated chunks.
+    result_line_length = 80, -- line length of displayed results.
+    result_hl_group = "DiagnosticVirtualTextInfo", -- highlight group used for results.
   }
 <
 If you use the `rocks.nvim` package manager, you can use the
