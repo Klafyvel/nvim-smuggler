@@ -1,7 +1,5 @@
 local ui = {}
 
--- TODO: displaying multiple results for a single msgid fails.
-
 local nio = require("nio")
 local default_mappings = require("smuggler.mappings")
 local slime = require("smuggler.reslime")
