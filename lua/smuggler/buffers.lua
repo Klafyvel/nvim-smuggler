@@ -132,34 +132,6 @@ function M.chunk(linestart, linestop, colstart, colstop, valid)
 	}
 end
 
-function M.intersect(chunkA, chunkB)
-	local chunkB_is_sameline_and_starts_before_A = chunkB.linestart == chunkA.linestart
-		and chunkB.colstart ~= nil
-		and chunkA.colstart ~= nil
-		and chunkB.colstart < chunkA.colstart
-	if chunkB.linestart < chunkA.linestart or chunkB_is_sameline_and_starts_before_A then
-		return M.intersect(chunkB, chunkA)
-	elseif chunkA.linestart == chunkB.linestart then
-		if chunkA.linestop > chunkA.linestart then
-			return true
-		elseif chunkA.colstart == nil or chunkB.colstart == nil or chunkA.colstop == nil then
-			return true
-		else
-			return chunkA.colstop >= chunkB.colstart
-		end
-	elseif chunkA.linestart < chunkB.linestart and chunkB.linestart < chunkA.linestop then
-		return true
-	elseif chunkA.linestop == chunkB.linestart then
-		if chunkA.colstop == nil or chunkB.colstart == nil then
-			return true
-		else
-			return chunkB.colstart <= chunkA.colstop
-		end
-	else
-		return false
-	end
-end
-
 function M.get_chunk_position(buffer, chunk)
 	if chunk.extmark == nil then
 		return chunk
@@ -187,14 +159,20 @@ function M.invalidate_changed_chunks(buffer)
 	tmp = vim.api.nvim_buf_get_mark(buffer.number, "]")
 	local rowstop = tmp[1]
 	local colstop = tmp[2]
-	local changed_chunk = M.chunk(rowstart, rowstop, colstart, colstop)
-	config.debug("changed_chunk=" .. vim.inspect(tmp))
+	local namespace = vim.api.nvim_create_namespace("smuggler")
+    local intersected_extmarks = vim.iter(vim.api.nvim_buf_get_extmarks(
+        buffer.number, namespace, {rowstart, colstart}, {rowstop, colstop}, {overlap=true}))
+    intersected_extmarks:map(function(item) 
+        return item[1] 
+    end)
+    intersected_extmarks = intersected_extmarks:fold({}, function(t, v) 
+        if v ~= nil then
+            t[v] = true 
+        end
+        return t
+    end)
 	for msgid, chunk in pairs(buffer.evaluated_chunks) do
-		config.debug(
-			"Checking invalidation chunk=" .. vim.inspect(chunk),
-			"changed_chunk=" .. vim.inspect(changed_chunk)
-		)
-		if M.intersect(M.get_chunk_position(buffer, chunk), changed_chunk) then
+		if intersected_extmarks[chunk.extmark] ~= nil then
 			chunk.valid = false
 		end
 	end
