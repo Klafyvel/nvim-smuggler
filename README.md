@@ -55,6 +55,8 @@ values):
       smuggle_operator = "gcs", -- SmuggleOperator in normal mode.
     },
     eval_by_blocks = false, -- Configure each new session eval by block attribute.
+    evaluated_hl = "MoreMsg", -- highlight group for evaluated chunks.
+    invalidated_hl = "WarningMsg", -- highlight group for invalidated evaluated chunks.
   }
 ```
 

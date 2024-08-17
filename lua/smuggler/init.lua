@@ -20,6 +20,8 @@ function smuggler.setup(opts)
   end
   smuggler.config.eval_by_blocks = opts.eval_by_blocks
 
+  smuggler_ui.init_ui(opts)
+
   -- Define commands
   smuggler_ui.create_user_commands()
 

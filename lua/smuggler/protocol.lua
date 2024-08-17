@@ -4,6 +4,7 @@ local uv = vim.loop
 local nio = require("nio")
 local config = require("smuggler.config")
 local snitch = require("smuggler.snitch")
+local buffers = require("smuggler.buffers")
 
 function M.socketsdir()
   if vim.fn.has("unix") or vim.fn.has("mac") then
@@ -179,21 +180,7 @@ function M.bufconfig(bufnbr, force, settings)
   if socket_path == nil then
     return -1
   end
-  local bufconfig = {
-    socket = socket,
-    path = socket_path,
-    incoming_queue = nio.control.queue(),
-    outgoing_queue = nio.control.queue(),
-    sent_requests = {},
-    lines = '',
-    sent_messages = {},
-    session_connected_event = nio.control.event(),
-    session_initialized_event = nio.control.event(),
-    session_settings = settings,
-    stopped_event = nio.control.event(),
-    last_msgid = 0x00,
-  }
-  config.buf[bufnbr] = bufconfig
+  config.buf[bufnbr] = buffers.buffer(bufnbr, socket_path, socket, settings)
 
   nio.run(function() M.runclient(vim.api.nvim_get_current_buf()) end)
   return 0
@@ -232,11 +219,16 @@ function M.exit()
   return config.buf[bufnbr].last_msgid
 end
 
-function M.configure_session(bufnbr)
+function M.configure_session(bufnbr, settings)
   if bufnbr == nil then
     bufnbr = vim.api.nvim_get_current_buf()
   end
-  local settings = config.buf[bufnbr].session_settings
+  config.debug("bufnbr=" .. vim.inspect(bufnbr), "buf="..vim.inspect(config.buf[bufnbr]))
+  if settings == nil then
+      settings = config.buf[bufnbr].session_settings
+  else 
+      vim.tbl_extend("force", config.buf[bufnbr].session_settings, settings)
+  end
   config.buf[bufnbr].last_msgid = config.buf[bufnbr].last_msgid + 1
   nio.run(function ()
     config.buf[bufnbr].outgoing_queue.put({ msgid=config.buf[bufnbr].last_msgid, type="configure", payload={settings} })

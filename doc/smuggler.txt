@@ -75,9 +75,21 @@ also set the |quickfix| list and open the quickfix window.
   :SmuggleShowDiagnostics
                         Show smuggler's diagnostics.
 
-                                                    *:SmuggleResetDiagnostics*
-  :SmuggleResetDiagnostics
-                        Reset smuggler's diagnostics.
+                                                       *:SmuggleHideEvaluated*
+  :SmuggleHideEvaluated
+                        Hide highlight around evaluated chunks.
+
+                                                       *:SmuggleShowEvaluated*
+  :SmuggleShowEvaluated
+                        Show highlight around evaluated chunks.
+
+                                                         *:SmuggleHideResults*
+  :SmuggleHideResults
+                        Hide evaluation results.
+
+                                                         *:SmuggleShowResults*
+  :SmuggleShowResults
+                        Show evaluation results.
 
 ==============================================================================
 LUA API                                                     *smuggler-lua-api*
@@ -162,6 +174,8 @@ values): >
       smuggle_operator = "gcs", -- SmuggleOperator in normal mode.
     },
     eval_by_blocks = false, -- Configure each new session eval by block attribute.
+    evaluated_hl = "MoreMsg", -- highlight group for evaluated chunks.
+    invalidated_hl = "WarningMsg", -- highlight group for invalidated evaluated chunks.
   }
 <
 If you use the `rocks.nvim` package manager, you can use the

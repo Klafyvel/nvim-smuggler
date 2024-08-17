@@ -36,26 +36,21 @@ function M.snitch_error(bufnbr, response)
 end
 
 function M.snitch_result(bufnbr, response)
-  local line_length = 80
-  config.debug("Snitching result")
-  local linenumber = response[4][1]
-  config.debug("linenumber", linenumber)
-  local output = response[4][2]
-  config.debug("output", output)
-  local namespace = nio.api.nvim_create_namespace("smuggler")
-  local lines = {}
-  for line in string.gmatch(output, "([^\n]+)") do
-    if string.len(line) < line_length then
-        line = line .. string.rep(" ", line_length - string.len(line))
-    end
-    lines[#lines+1] = {{line, "DiagnosticVirtualTextInfo"}}
+  local msgid = response[2]
+  local result = {
+    linenumber = response[4][1],
+    output = response[4][2],
+    msgid = msgid,
+    shown = false,
+  }
+  if config.buf[bufnbr].results[msgid] == nil then
+    config.buf[bufnbr].results[msgid] = {}
   end
-  config.debug("lines", lines)
-  vim.api.nvim_buf_set_extmark(bufnbr, namespace, linenumber-1, 0, {
-    virt_lines = lines,
-    hl_eol = true,
-    })
-  config.debug("done", lines)
+  local tbl = config.buf[bufnbr].results[msgid]
+  tbl[#tbl+1] = result
+  config.debug("Results are " .. vim.inspect(config.buf[bufnbr].results))
+  config.buf[bufnbr].update_result_display_event.set()
+  config.debug("Display loop notified.")
 end
 
 function M.snitch(bufnbr, response)
