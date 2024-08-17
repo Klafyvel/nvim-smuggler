@@ -19,7 +19,7 @@ end
 
 -- This is intended to be used as an operator. See `:help :map-operator`.
 function M.send_op(type)
-	local r = protocol.bufconfig()
+	local r = buffers.buffer()
 	if r == -1 then
 		return -1
 	end
@@ -63,7 +63,7 @@ function M.send_op(type)
 end
 
 function M.send_range(linestart, linestop, colstart, colstop, vmode)
-	local r = protocol.bufconfig()
+	local r = buffers.buffer()
 	if r == -1 then
 		return -1
 	end
@@ -82,7 +82,7 @@ function M.send_range(linestart, linestop, colstart, colstop, vmode)
 end
 
 function M.send_lines(count)
-	local r = protocol.bufconfig()
+	local r = buffers.buffer()
 	if r == -1 then
 		return -1
 	end

@@ -7,6 +7,7 @@ local default_mappings = require("smuggler.mappings")
 local slime = require("smuggler.reslime")
 local protocol = require("smuggler.protocol")
 local config = require("smuggler.config")
+local buffers = require("smuggler.buffers")
 
 ui.EVALUATED_SIGN_NAME = "smuggler-evaluated"
 ui.INVALIDATED_SIGN_NAME = "smuggler-invalidated"
@@ -39,7 +40,7 @@ function ui.create_user_commands()
 		count = true,
 	})
 	vim.api.nvim_create_user_command("SmuggleConfig", function(_)
-		protocol.bufconfig(nil, true, { evalbyblocks = config.eval_by_blocks })
+		buffers.buffer(nil, true, { evalbyblocks = config.eval_by_blocks })
 	end, {
 		desc = "(Re)configure the current buffer for smuggling.",
 	})

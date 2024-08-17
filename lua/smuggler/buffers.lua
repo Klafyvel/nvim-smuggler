@@ -2,13 +2,64 @@ local M = {}
 
 local nio = require("nio")
 local config = require("smuggler.config")
+local uv = vim.loop
 
--- TODO: move bufconfig here.
--- TODO: move diagnostics display here.
-function M.buffer(bufnbr, socket_path, socket, settings)
+function M.socketsdir()
+	if vim.fn.has("unix") or vim.fn.has("mac") then
+		return "/run/user/" .. tostring(uv.getuid()) .. "/julia/replsmuggler/"
+	elseif vim.fn.has("win32") then
+		return "\\\\.\\pipe\\"
+	else
+		error("Unsupported platform.")
+	end
+end
+
+function M.getavailablesockets()
+	local directory = M.socketsdir()
+	local res = {}
+	for v in vim.fs.dir(directory) do
+		res[#res + 1] = directory .. v
+	end
+	return res
+end
+
+function M.choosesocket()
+	local sockets = M.getavailablesockets()
+	local choice = nil
+	vim.ui.select(sockets, {
+		prompt = "Select a socket:",
+	}, function(c)
+		choice = c
+	end)
+	return choice
+end
+
+function M.buffer(bufnbr, force, settings)
+	if bufnbr == nil then
+		bufnbr = vim.api.nvim_get_current_buf()
+	end
+	local current_config = config.buf[bufnbr]
+	if force == nil then
+		force = false
+	end
+	if settings == nil then
+		settings = { evalbyblocks = config.eval_by_blocks }
+	end
+	if current_config ~= nil then
+		local closed = current_config.socket:is_closing()
+		if not closed and not force then
+			return current_config
+		elseif not closed and force then
+			current_config.socket:close()
+		end
+	end
+	local socket_path = M.choosesocket()
+	if socket_path == nil then
+		return -1
+	end
 	local buffer = {
 		number = bufnbr,
-		socket = socket,
+		socket = nil,
 		path = socket_path,
 		incoming_queue = nio.control.queue(),
 		outgoing_queue = nio.control.queue(),
@@ -27,7 +78,9 @@ function M.buffer(bufnbr, socket_path, socket, settings)
 		update_chunk_display_event = nio.control.event(),
 		update_diagnostic_display_event = nio.control.event(),
 	}
+    config.buf[bufnbr] = buffer
 	local ui = require("smuggler.ui")
+    local protocol = require("smuggler.protocol")
 	nio.run(function()
 		while true do
 			config.debug("Display loop waiting.")
@@ -61,6 +114,9 @@ function M.buffer(bufnbr, socket_path, socket, settings)
 			buffer.update_diagnostic_display_event.clear()
         end
     end)
+	nio.run(function()
+		protocol.runclient(buffer.number)
+	end)
 	ui.init_buffer(bufnbr)
 	return buffer
 end
