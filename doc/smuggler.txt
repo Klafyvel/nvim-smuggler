@@ -75,6 +75,14 @@ also set the |quickfix| list and open the quickfix window.
   :SmuggleShowDiagnostics
                         Show smuggler's diagnostics.
 
+                                                         *:SmuggleHideLocList*
+  :SmuggleHideLocList
+                        Hide smuggler's diagnostics loclist.
+
+                                                             *:SmuggleLocList*
+  :SmuggleLocList
+                        Show smuggler's diagnostics loclist.
+
                                                        *:SmuggleHideEvaluated*
   :SmuggleHideEvaluated
                         Hide highlight around evaluated chunks.

@@ -5,34 +5,23 @@ local nio=require("nio")
 
 function M.snitch_error(bufnbr, response)
   config.debug("Snitching error")
+  local msgid = response[2]
   local exception_text = response[3][2]
   config.debug("text is", exception_text)
   local stacktrace = response[3][3]
   config.debug("stacktrace is", stacktrace)
-  local namespace = nio.api.nvim_create_namespace("smuggler")
-  config.debug("namespace is", namespace)
-  local diagnostics = vim.diagnostic.get(bufnbr, {namespace=namespace})
-  for stackidx, stackrow in ipairs(stacktrace) do
-    config.debug("Doing stacktrace element: ", stackrow)
-    if vim.api.nvim_buf_get_name(bufnbr) ~= stackrow[1] then
-      goto continue
-    end
-    diagnostics[#diagnostics+1] =  {
-      lnum = stackrow[2]-1,
-      col = 0,
-      message = "[" .. stackidx .. "] " .. exception_text .. " in " .. stackrow[3],
-      severity = vim.diagnostic.severity.ERROR,
-      source = "Julia REPL",
-    }
-    ::continue::
+  local buffer = config.buf[bufnbr]
+  if #buffer.diagnostics >= 1 and buffer.diagnostics[1].msgid ~= msgid then
+    buffer.diagnostics = {}
   end
-  config.debug("Created the diagnostic list", diagnostics)
-  vim.diagnostic.set(namespace, bufnbr, diagnostics, {})
-  vim.diagnostic.setloclist({
-    namespace=namespace,
-    title="REPL error: " .. exception_text,
-  })
-  vim.diagnostic.show(namespace, bufnbr)
+  buffer.diagnostics[#buffer.diagnostics+1] = {
+    text = exception_text,
+    stacktrace = stacktrace,
+    msgid = msgid,
+    shown = false,
+  }
+  config.buf[bufnbr].update_diagnostic_display_event.set()
+  config.debug("Display loop notified.")
 end
 
 function M.snitch_result(bufnbr, response)
@@ -48,9 +37,7 @@ function M.snitch_result(bufnbr, response)
   end
   local tbl = config.buf[bufnbr].results[msgid]
   tbl[#tbl+1] = result
-  config.debug("Results are " .. vim.inspect(config.buf[bufnbr].results))
   config.buf[bufnbr].update_result_display_event.set()
-  config.debug("Display loop notified.")
 end
 
 function M.snitch(bufnbr, response)
