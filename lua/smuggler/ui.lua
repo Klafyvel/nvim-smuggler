@@ -83,7 +83,7 @@ function ui.create_user_commands()
 		desc = "Hide smuggler's diagnostics loclist.",
 	})
 	vim.api.nvim_create_user_command("SmuggleHideEvaluated", function(_)
-		ui.remove_chunk_highlights()
+		ui.hidechunk_highlights()
 	end, {
 		desc = "Hide highlight around evaluated chunks.",
 	})
@@ -130,7 +130,7 @@ function ui.init_ui(opts)
     config.result_hl_group = opts.result_hl_group
 end
 
-function ui.remove_chunk_highlights(bufnbr)
+function ui.hide_chunk_highlights(bufnbr)
 	bufnbr = (bufnbr == nil) and vim.api.nvim_get_current_buf() or bufnbr
 	local namespace = nio.api.nvim_create_namespace("smuggler")
 	for i, chunk in pairs(config.buf[bufnbr].evaluated_chunks) do
@@ -190,7 +190,7 @@ function ui.place_chunk_highlights(bufnbr)
 end
 
 function ui.update_chunk_highlights(bufnbr)
-	ui.remove_chunk_highlights(bufnbr)
+	ui.hide_chunk_highlights(bufnbr)
 	ui.place_chunk_highlights(bufnbr)
 end
 

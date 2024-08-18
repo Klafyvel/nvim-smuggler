@@ -70,7 +70,7 @@ function M.buffer(bufnbr, force, settings)
 		last_msgid = 0x00,
 		evaluated_chunks = {}, -- msgid -> chunk
 		results = {}, -- msgid -> list of results
-        diagnostics = {}, -- msgid -> list of diagnostics
+        diagnostics = {}, -- list of diagnostics from last msgid
 		update_result_display_event = nio.control.event(),
 		update_chunk_display_event = nio.control.event(),
 		update_diagnostic_display_event = nio.control.event(),
@@ -148,34 +148,54 @@ function M.get_chunk_position(buffer, chunk)
 	end
 end
 
--- TODO: The [ marks seem to be uncorrectly placed for the very first edit to a buffer,
--- this triggers the invalidation of the block even though it shouldn't...
-function M.invalidate_changed_chunks(buffer)
-	config.debug("Invalidating!")
-	local tmp = vim.api.nvim_buf_get_mark(buffer.number, "[")
-	local rowstart = tmp[1]-1
-	local colstart = tmp[2]
-	tmp = vim.api.nvim_buf_get_mark(buffer.number, "]")
-	local rowstop = tmp[1]-1
-	local colstop = tmp[2]
-    config.debug({rowstart=rowstart, colstart=colstart, rowstop=rowstop, colstop=colstop})
+function M.find_intersected_chunks(buffer, chunk)
 	local namespace = vim.api.nvim_create_namespace("smuggler")
     local intersected_extmarks = vim.iter(vim.api.nvim_buf_get_extmarks(
-        buffer.number, namespace, {rowstart, colstart}, {rowstop, colstop}, {overlap=true}))
+        buffer.number, namespace, {chunk.linestart-1, chunk.colstart}, {chunk.linestop-1, chunk.colstop}, {overlap=true}))
     intersected_extmarks:map(function(item) 
         return item[1] 
     end)
-	config.debug("intersected_extmarks=" .. vim.inspect(intersected_extmarks:totable()))
     intersected_extmarks = intersected_extmarks:fold({}, function(t, v) 
         if v ~= nil then
             t[v] = true 
         end
         return t
     end)
-	for msgid, chunk in pairs(buffer.evaluated_chunks) do
-		if intersected_extmarks[chunk.extmark] ~= nil then
-			chunk.valid = false
-		end
+    return vim.iter(pairs(buffer.evaluated_chunks)):filter(function(i,chunk)
+        return intersected_extmarks[chunk.extmark] ~= nil
+    end)
+end
+
+function M.delete_intersected_chunks(buffer, new_chunk)
+	local namespace = nio.api.nvim_create_namespace("smuggler")
+	for msgid, chunk in M.find_intersected_chunks(buffer, new_chunk) do
+        if buffer.results[msgid] ~= nil then
+            for _,result in ipairs(buffer.results[msgid]) do 
+                vim.api.nvim_buf_del_extmark(buffer.number, namespace, result.mark_id)
+            end
+        end
+        vim.api.nvim_buf_del_extmark(buffer.number, namespace, chunk.extmark)
+        buffer.results[msgid] = nil
+        buffer.evaluated_chunks[msgid] = nil
+	end
+    buffer.update_result_display_event.set()
+    buffer.update_chunk_display_event.set()
+end
+
+-- TODO: The [ marks seem to be uncorrectly placed for the very first edit to a buffer,
+-- this triggers the invalidation of the block even though it shouldn't...
+function M.invalidate_changed_chunks(buffer)
+	config.debug("Invalidating!")
+	local tmp = vim.api.nvim_buf_get_mark(buffer.number, "[")
+	local rowstart = tmp[1]
+	local colstart = tmp[2]
+	tmp = vim.api.nvim_buf_get_mark(buffer.number, "]")
+	local rowstop = tmp[1]
+	local colstop = tmp[2]
+    local changed_chunk = M.chunk(rowstart, rowstop, colstart, colstop)
+    config.debug({rowstart=rowstart, colstart=colstart, rowstop=rowstop, colstop=colstop})
+	for msgid, chunk in M.find_intersected_chunks(buffer, changed_chunk) do
+        chunk.valid = false
 	end
 end
 
