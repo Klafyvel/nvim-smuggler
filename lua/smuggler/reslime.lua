@@ -74,6 +74,8 @@ function M.send_range(linestart, linestop, colstart, colstop, vmode)
 		text = table.concat(vim.api.nvim_buf_get_text(0, linestart - 1, colstart - 1, linestop - 1, colstop, {}), "\n")
 	elseif vmode == "V" or vmode == nil then
 		text = table.concat(vim.api.nvim_buf_get_lines(0, linestart - 1, linestop, false), "\n")
+        colstop = vim.api.nvim_strwidth(vim.fn.getline(linestop))
+        colstart = 0
 	elseif vmode == "\x16" then
 		text = table.concat(M.select_block(linestart, linestop, colstart, colstop), "\n")
 	end
