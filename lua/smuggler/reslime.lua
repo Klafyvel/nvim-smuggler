@@ -34,10 +34,10 @@ function M.send_op(type)
 	if type == "line" then
 		local tmp = vim.api.nvim_buf_get_mark(bufnbr, "[")
 		row_start = tmp[1]
-		col_start = tmp[2]
+		col_start = 0
 		tmp = vim.api.nvim_buf_get_mark(bufnbr, "]")
 		row_stop = tmp[1]
-		col_stop = tmp[2]
+		col_stop = vim.api.nvim_strwidth(vim.fn.getline(row_stop))
 		text = table.concat(vim.api.nvim_buf_get_lines(bufnbr, row_start - 1, row_stop, false), "\n")
 	elseif type == "block" then
 		row_start, col_start = vim.api.nvim_buf_get_mark(bufnbr, "[")
@@ -58,7 +58,7 @@ function M.send_op(type)
 	config.debug({ row_start = row_start })
 
 	local msgid = protocol.send(text, row_start, vim.api.nvim_buf_get_name(bufnbr))
-	config.buf[bufnbr].evaluated_chunks[msgid] = buffers.chunk(row_start, row_stop, col_start, cols_top)
+	config.buf[bufnbr].evaluated_chunks[msgid] = buffers.chunk(row_start, row_stop, col_start, col_stop)
 	require("smuggler.ui").update_chunk_highlights()
 end
 
@@ -95,7 +95,8 @@ function M.send_lines(count)
 	local linestop = linestart + count - 1
 	local text = table.concat(vim.api.nvim_buf_get_lines(0, linestart - 1, linestop, false), "\n")
 	local msgid = protocol.send(text, rowcol[1], vim.api.nvim_buf_get_name(0))
-	config.buf[bufnbr].evaluated_chunks[msgid] = buffers.chunk(linestart, linestop)
+    local colstop = vim.api.nvim_strwidth(vim.fn.getline(linestop))
+	config.buf[bufnbr].evaluated_chunks[msgid] = buffers.chunk(linestart, linestop, 0, colstop)
 end
 
 return M

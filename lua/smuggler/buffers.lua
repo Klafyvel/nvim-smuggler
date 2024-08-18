@@ -150,21 +150,22 @@ end
 
 -- TODO: The [ marks seem to be uncorrectly placed for the very first edit to a buffer,
 -- this triggers the invalidation of the block even though it shouldn't...
--- TODO: one-liner chunks seem to not get invalidated.
 function M.invalidate_changed_chunks(buffer)
 	config.debug("Invalidating!")
 	local tmp = vim.api.nvim_buf_get_mark(buffer.number, "[")
-	local rowstart = tmp[1]
+	local rowstart = tmp[1]-1
 	local colstart = tmp[2]
 	tmp = vim.api.nvim_buf_get_mark(buffer.number, "]")
-	local rowstop = tmp[1]
+	local rowstop = tmp[1]-1
 	local colstop = tmp[2]
+    config.debug({rowstart=rowstart, colstart=colstart, rowstop=rowstop, colstop=colstop})
 	local namespace = vim.api.nvim_create_namespace("smuggler")
     local intersected_extmarks = vim.iter(vim.api.nvim_buf_get_extmarks(
         buffer.number, namespace, {rowstart, colstart}, {rowstop, colstop}, {overlap=true}))
     intersected_extmarks:map(function(item) 
         return item[1] 
     end)
+	config.debug("intersected_extmarks=" .. vim.inspect(intersected_extmarks:totable()))
     intersected_extmarks = intersected_extmarks:fold({}, function(t, v) 
         if v ~= nil then
             t[v] = true 

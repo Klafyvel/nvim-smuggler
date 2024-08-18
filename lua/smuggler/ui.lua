@@ -135,13 +135,15 @@ function ui.remove_chunk_highlights(bufnbr)
 	local namespace = nio.api.nvim_create_namespace("smuggler")
 	for i, chunk in pairs(config.buf[bufnbr].evaluated_chunks) do
 		if chunk.extmark ~= nil then
-			local extmark = vim.api.nvim_buf_get_extmark_by_id(bufnbr, namespace, chunk.extmark, {})
-			local linespan = chunk.linestop - chunk.linestart
+			local extmark = vim.api.nvim_buf_get_extmark_by_id(bufnbr, namespace, chunk.extmark, {details=true})
 			vim.api.nvim_buf_set_extmark(bufnbr, namespace, extmark[1], extmark[2], {
 				id = chunk.extmark,
-				end_row = extmark[1] + linespan,
+				end_row = extmark[3].end_row,
+                end_col = extmark[3].end_col,
 				sign_text = "",
 				sign_hl_group = "",
+                end_right_gravity = true,
+                right_gravity=false,
 			})
 		end
 	end
@@ -150,26 +152,31 @@ end
 function ui.highlight_chunk(bufnbr, chunk)
 	local namespace = nio.api.nvim_create_namespace("smuggler")
 	local hl_group = chunk.valid and config.evaluated_hl or config.invalidated_hl
+    local opts = {
+        end_row = chunk.linestop - 1,
+        end_col = chunk.colstop,
+        sign_text = "│",
+        sign_hl_group = hl_group,
+        end_right_gravity = true,
+        right_gravity=false
+    }
+    if config.debug_enabled then
+        opts.hl_group = "TermCursor"
+    end
 	if chunk.extmark == nil then
-		local extmark_id = vim.api.nvim_buf_set_extmark(bufnbr, namespace, chunk.linestart - 1, 0, {
-			end_row = chunk.linestop - 1,
-			sign_text = "│",
-			sign_hl_group = hl_group,
-		})
+		local extmark_id = vim.api.nvim_buf_set_extmark(bufnbr, namespace, chunk.linestart - 1, chunk.colstart, opts)
 		if extmark_id == -1 then
 			error("Could not place extmark for chunk" .. vim.inspect(chunk) .. " at line " .. chunk.linestart)
 		else
 			chunk.extmark = extmark_id
 		end
 	else
-		local extmark = vim.api.nvim_buf_get_extmark_by_id(bufnbr, namespace, chunk.extmark, {})
-		local linespan = chunk.linestop - chunk.linestart
-		vim.api.nvim_buf_set_extmark(bufnbr, namespace, extmark[1], extmark[2], {
+		local extmark = vim.api.nvim_buf_get_extmark_by_id(bufnbr, namespace, chunk.extmark, {details=true})
+		vim.api.nvim_buf_set_extmark(bufnbr, namespace, extmark[1], extmark[2], vim.tbl_extend("force", opts, {
 			id = chunk.extmark,
-			end_row = extmark[1] + linespan,
-			sign_text = "│",
-			sign_hl_group = hl_group,
-		})
+			end_row = extmark[3].end_row,
+            end_col = extmark[3].end_col
+		}))
 	end
 	return chunk
 end
