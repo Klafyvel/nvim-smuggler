@@ -2,6 +2,7 @@ local M = {}
 
 local config= require("smuggler.config")
 local nio=require("nio")
+local uv = vim.loop
 
 function M.snitch_error(bufnbr, response)
   config.debug("Snitching error")
@@ -26,22 +27,25 @@ end
 
 function M.snitch_result(bufnbr, response)
   local msgid = response[2]
-  local result = {
-    linenumber = response[4][1],
-    output = response[4][2],
-    msgid = msgid,
-    shown = false,
-  }
   if config.buf[bufnbr].results[msgid] == nil then
     config.buf[bufnbr].results[msgid] = {}
   end
-  local tbl = config.buf[bufnbr].results[msgid]
-  tbl[#tbl+1] = result
+  local tbl_results = config.buf[bufnbr].results[msgid]
+  local mime = response[4][2]
+  local output = response[4][3]
+  local result = {
+    linenumber = response[4][1],
+    mime = mime,
+    output = output,
+    msgid = msgid,
+    shown = false,
+  }
+  tbl_results[#tbl_results+1] = result
   config.buf[bufnbr].update_result_display_event.set()
 end
 
 function M.snitch(bufnbr, response)
-  config.debug("Snitching :D ", response)
+  config.debug("Snitching :D ", response[1], response[2])
   if response[3] == vim.NIL then
       return M.snitch_result(bufnbr, response)
   else

@@ -42,9 +42,14 @@ function M.buffer(bufnbr, force, settings)
 	if force == nil then
 		force = false
 	end
+    local default_settings =  { 
+        evalbyblocks = config.eval_by_blocks, 
+        showdir=vim.fs.dirname(vim.fn.tempname()) 
+    }
 	if settings == nil then
-		settings = { evalbyblocks = config.eval_by_blocks }
+        settings = {}
 	end
+    settings = vim.tbl_extend("keep", settings, default_settings)
 	if current_config ~= nil then
 		local closed = current_config.socket:is_closing()
 		if not closed and not force then
@@ -57,6 +62,9 @@ function M.buffer(bufnbr, force, settings)
 	if socket_path == nil then
 		return -1
 	end
+    local bufname = vim.fn.bufname(bufnbr)
+    local splitted_name = vim.split(vim.fs.basename(bufname), ".")[1]
+    local images_path = vim.fs.joinpath(vim.fs.dirname(bufname), splitted_name .. "_images")
 	local buffer = {
 		number = bufnbr,
 		socket = nil,
@@ -74,6 +82,10 @@ function M.buffer(bufnbr, force, settings)
 		update_result_display_event = nio.control.event(),
 		update_chunk_display_event = nio.control.event(),
 		update_diagnostic_display_event = nio.control.event(),
+        images_path = images_path, 
+        chunks_shown = true,
+        results_shown = true,
+        diagnostics_shown = true,
 	}
     config.buf[bufnbr] = buffer
 	local ui = require("smuggler.ui")
@@ -171,10 +183,19 @@ function M.delete_intersected_chunks(buffer, new_chunk)
 	for msgid, chunk in M.find_intersected_chunks(buffer, new_chunk) do
         if buffer.results[msgid] ~= nil then
             for _,result in ipairs(buffer.results[msgid]) do 
-                vim.api.nvim_buf_del_extmark(buffer.number, namespace, result.mark_id)
+                if result.mark_id ~= nil then 
+                    vim.api.nvim_buf_del_extmark(buffer.number, namespace, result.mark_id)
+                end
             end
         end
         vim.api.nvim_buf_del_extmark(buffer.number, namespace, chunk.extmark)
+        for _,result in pairs(buffer.results[msgid]) do 
+            if result.images ~= nil then
+                for _,img in pairs(result.images) do 
+                    img:clear()
+                end
+            end
+        end
         buffer.results[msgid] = nil
         buffer.evaluated_chunks[msgid] = nil
 	end

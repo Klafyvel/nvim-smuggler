@@ -7,6 +7,11 @@ local protocol = require("smuggler.protocol")
 local config = require("smuggler.config")
 local buffers = require("smuggler.buffers")
 
+local image = nil
+if config.image_nvim_available() then
+    image = require("image")
+end
+
 ui.EVALUATED_SIGN_NAME = "smuggler-evaluated"
 ui.INVALIDATED_SIGN_NAME = "smuggler-invalidated"
 ui.SMUGGLER_SIGN_GROUP = "smuggler"
@@ -128,6 +133,16 @@ function ui.init_ui(opts)
 	config.invalidated_hl = opts.invalidated_hl
     config.result_line_length = opts.result_line_length
     config.result_hl_group = opts.result_hl_group
+
+    vim.api.nvim_create_autocmd("WinNew", {
+        callback = function(args)
+            -- cannot get win id from arguments, and buffer number is not trustworthy
+            -- in args, since BuffEnter hasn't been called yet.
+            local winid = math.max(unpack(vim.api.nvim_list_wins()))
+            -- Register buffer when it is shown inside window
+            vim.schedule(function() ui.add_window(winid) end)
+        end
+    })
 end
 
 function ui.hide_chunk_highlights(bufnbr)
@@ -147,6 +162,7 @@ function ui.hide_chunk_highlights(bufnbr)
 			})
 		end
 	end
+    config.buf[bufnbr].chunks_shown = false
 end
 
 function ui.highlight_chunk(bufnbr, chunk)
@@ -187,11 +203,87 @@ function ui.place_chunk_highlights(bufnbr)
 	for _, chunk in pairs(chunks) do
 		ui.highlight_chunk(bufnbr, chunk)
 	end
+    config.buf[bufnbr].chunks_shown = true
 end
 
 function ui.update_chunk_highlights(bufnbr)
 	ui.hide_chunk_highlights(bufnbr)
 	ui.place_chunk_highlights(bufnbr)
+end
+
+function ui.show_images(bufnbr)
+    for msgid,results in pairs(config.buf[bufnbr].results) do 
+        for _,result in pairs(results) do
+            if result.images ~= nil then
+                for _,img in pairs(result.images) do 
+                    img:render()
+                end
+            end
+        end
+    end
+end
+
+function ui.clear_images(bufnbr)
+    for msgid,results in pairs(config.buf[bufnbr].results) do 
+        for _,result in pairs(results) do
+            if result.images ~= nil then
+                for _,img in pairs(result.images) do 
+                    img:clear()
+                end
+            end
+        end
+    end
+end
+
+function ui.add_window(winid)
+    local bufnbr = vim.api.nvim_win_get_buf(winid)
+    if config.buf[bufnbr] == nil then
+        return
+    end
+    for msgid,results in pairs(config.buf[bufnbr].results) do 
+        for _,result in pairs(results) do
+            local type = vim.split(result.mime, "/")
+            if type[1] == "image" then
+                ui.add_an_image_to_result(bufnbr, result, winid)
+            end
+        end
+    end
+    if config.buf[bufnbr].results_shown then
+        ui.show_images(bufnbr)
+    end
+end
+
+function ui.add_an_image_to_result(bufnbr, result, winid)
+    -- Do not display images when the module is not loaded.
+    if image == nil then
+        return
+    end
+    local winlist = {}
+    if winid == nil then
+        winlist = vim.fn.win_findbuf(bufnbr)
+    else 
+        winlist = {winid}
+    end
+    for _,win in pairs(winlist) do 
+        config.debug("Loading an image")
+        local img = image.from_file(result.output, {
+            with_virtual_padding = true,
+            buffer=bufnbr,
+            window=win,
+            x = 0,
+            y = result.firstline,
+            height=10
+        })
+        config.debug("Image created", img)
+        if img ~= nil then
+            if result.images == nil then
+                result.images = {}
+            end
+            result.images[#result.images+1] = img
+        else 
+            error("Error while loading image " .. result.output)
+        end
+    end
 end
 
 function ui.show_one_result(bufnbr, result)
@@ -211,16 +303,22 @@ function ui.show_one_result(bufnbr, result)
 	end
 	local firstmarkline = extmark[1]
 	local firstline = firstmarkline + rellinenumber
-	config.debug("Preparing lines.")
-	local lines = {}
-	for line in string.gmatch(result.output, "([^\n]+)") do
-		if string.len(line) < line_length then
-			line = line .. string.rep(" ", line_length - string.len(line))
-		end
-		lines[#lines + 1] = { { line, config.result_hl_group} }
-	end
-	local namespace = nio.api.nvim_create_namespace("smuggler")
-	result.mark_id = nio.api.nvim_buf_set_extmark(bufnbr, namespace, firstline, 0, { virt_lines = lines })
+    local type = vim.split(result.mime, "/")
+    result.firstline = firstline
+    if type[1] == "image" then
+        ui.add_an_image_to_result(bufnbr, result)
+    else
+        config.debug("Preparing lines.")
+        local lines = {}
+        for line in string.gmatch(result.output, "([^\n]+)") do
+            if string.len(line) < line_length then
+                line = line .. string.rep(" ", line_length - string.len(line))
+            end
+            lines[#lines + 1] = { { line, config.result_hl_group} }
+        end
+        local namespace = nio.api.nvim_create_namespace("smuggler")
+        result.mark_id = nio.api.nvim_buf_set_extmark(bufnbr, namespace, firstline, 0, { virt_lines = lines })
+    end
 	result.shown = true
 	config.debug("Done showing.")
 end
@@ -236,6 +334,8 @@ function ui.show_evaluation_results(bufnbr)
 			end
 		end
 	end
+    ui.show_images(bufnbr)
+    buffer.results_shown = true
 end
 
 function ui.hide_evaluation_results(bufnbr)
@@ -251,6 +351,8 @@ function ui.hide_evaluation_results(bufnbr)
 			end
 		end
 	end
+    ui.clear_images(bufnbr)
+    buffer.results_shown = false
 end
 
 function ui.set_one_diagnostic(bufnbr, diagnostic)
@@ -284,6 +386,7 @@ function ui.show_diagnostics(bufnbr)
         ui.set_one_diagnostic(bufnbr, diagnostic)
     end
     vim.diagnostic.show(namespace, bufnbr)
+    buffer.diagnostics_shown = true
 end
 
 function ui.hide_diagnostics(bufnbr)
@@ -291,6 +394,7 @@ function ui.hide_diagnostics(bufnbr)
     local buffer = config.buf[bufnbr]
 	local namespace = nio.api.nvim_create_namespace("smuggler")
     vim.diagnostic.hide(namespace, bufnbr)
+    buffer.diagnostics_shown = false
 end
 
 function ui.show_diagnostic_loclist(bufnbr)
