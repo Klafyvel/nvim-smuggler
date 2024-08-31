@@ -45,8 +45,10 @@ function M.buffer(bufnbr, force, settings)
 		force = false
 	end
     local default_settings =  { 
-        evalbyblocks = config.eval_by_blocks, 
-        showdir=vim.fs.dirname(vim.fn.tempname()) 
+        evalbyblocks = config.buffers.eval_by_blocks, 
+        showdir=vim.fs.joinpath(config.buffers.showdir, bufnbr),
+        iocontext=config.buffers.iocontext,
+        enableimages=config.ui.display_images,
     }
 	if settings == nil then
         settings = {}

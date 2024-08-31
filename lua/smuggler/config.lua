@@ -20,7 +20,12 @@ config.log = {
 
 config.buffers = {
     eval_by_blocks = false,
-    showdir = vim.fs.dirname(vim.fn.tempname())
+    showdir = vim.fs.dirname(vim.fn.tempname()),
+    iocontext = {
+        compact = true,
+        limit = true,
+        displaysize = {10, 80},
+    },
 }
 -- End of default config
 

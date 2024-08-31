@@ -191,6 +191,13 @@ values): >
     buffers = {
         eval_by_blocks = false, -- Configure each new session eval by block attribute.
         showdir = vim.fs.dirname(vim.fn.tempname()),
+        iocontext = { -- Julia's IOContext
+        -- (https://docs.julialang.org/en/v1/base/io-network/#Base.IOContext-Tuple%7BIO,%20Pair%7D)
+        -- options to use.
+            compact = true,
+            limit = true,
+            displaysize = {10, 80},
+        },
     },
   }
 <
