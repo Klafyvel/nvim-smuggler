@@ -251,7 +251,7 @@ end
 
 function ui.add_an_image_to_result(bufnbr, result, winid)
     -- Do not display images when the module is not loaded.
-    if image == nil then
+    if image == nil or not config.ui.display_images then
         return
     end
     local winlist = {}
@@ -323,6 +323,9 @@ end
 
 function ui.show_evaluation_results(bufnbr)
 	log.debug("Showing evaluation results")
+    if not config.ui.display_results then
+        return
+    end
 	bufnbr = (bufnbr == nil) and vim.api.nvim_get_current_buf() or bufnbr
 	local buffer = run.buffers[bufnbr]
 	for msgid, results in pairs(buffer.results) do

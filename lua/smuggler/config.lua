@@ -6,6 +6,8 @@ config.ui = {
     invalidated_hl = "WarningMsg",
     result_line_length = 80,
     result_hl_group = "DiagnosticVirtualTextInfo",
+    display_results = true,
+    display_images = true,
     mappings = {}, -- Default mappings are defined in their own file.
 }
 

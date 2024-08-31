@@ -179,6 +179,8 @@ values): >
         invalidated_hl = "WarningMsg", -- highlight group for invalidated evaluated chunks.
         result_line_length = 80, -- line length of displayed results.
         result_hl_group = "DiagnosticVirtualTextInfo", -- highlight group used for results.
+        display_results = true, -- Display evaluation results.
+        display_images = true, -- Display images if `images.nvim` is present.
     },
     log = {
         level = "warn", -- available: trace, debug, info, warn, error, fatal
