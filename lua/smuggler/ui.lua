@@ -268,7 +268,7 @@ function ui.add_an_image_to_result(bufnbr, result, winid)
             window=win,
             x = 0,
             y = result.firstline,
-            height=10
+            height=config.ui.images_height,
         })
         log.debug("Image created", img)
         if img ~= nil then

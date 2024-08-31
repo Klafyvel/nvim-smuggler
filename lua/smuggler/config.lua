@@ -9,6 +9,7 @@ config.ui = {
     display_results = true,
     display_images = true,
     mappings = {}, -- Default mappings are defined in their own file.
+    images_height = 10,
 }
 
 config.log = {
