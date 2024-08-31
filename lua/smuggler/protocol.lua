@@ -5,9 +5,10 @@ local nio = require("nio")
 local config = require("smuggler.config")
 local snitch = require("smuggler.snitch")
 local buffers = require("smuggler.buffers")
+local run = require("smuggler.run")
 
 function M.serialize_requests(bufnbr)
-	local bufconfig = config.buf[bufnbr]
+	local bufconfig = run.buffers[bufnbr]
 	local queue = bufconfig.outgoing_queue
 	local handle = bufconfig.socket
 	while not bufconfig.stopped_event.is_set() do
@@ -20,7 +21,7 @@ function M.serialize_requests(bufnbr)
 end
 
 function M.deserialize_answers(bufnbr)
-	local bufconfig = config.buf[bufnbr]
+	local bufconfig = run.buffers[bufnbr]
 	if bufconfig.stopped_event.is_set() then
 		return
 	end
@@ -50,7 +51,7 @@ function M.deserialize_answers(bufnbr)
 end
 
 function M.treat_incoming(bufnbr)
-	local bufconfig = config.buf[bufnbr]
+	local bufconfig = run.buffers[bufnbr]
 	local queue = bufconfig.incoming_queue
 	while not bufconfig.stopped_event.is_set() do
 		local value = queue.get()
@@ -74,7 +75,7 @@ function M.treat_incoming(bufnbr)
 end
 
 function M.runclient(bufnbr)
-	local bufconfig = config.buf[bufnbr]
+	local bufconfig = run.buffers[bufnbr]
 	bufconfig.socket = uv.new_pipe(true)
 	bufconfig.socket:connect(bufconfig.path, function(err)
 		if err ~= nil then
@@ -109,33 +110,33 @@ function M.send(code, firstline, filename)
 	-- Clear previous diagnostics
 	local namespace = nio.api.nvim_create_namespace("smuggler")
 	vim.diagnostic.reset(namespace, bufnbr)
-	config.buf[bufnbr].last_msgid = config.buf[bufnbr].last_msgid + 1
+	run.buffers[bufnbr].last_msgid = run.buffers[bufnbr].last_msgid + 1
 	nio.run(function()
-		config.buf[bufnbr].outgoing_queue.put({
-			msgid = config.buf[bufnbr].last_msgid,
+		run.buffers[bufnbr].outgoing_queue.put({
+			msgid = run.buffers[bufnbr].last_msgid,
 			type = "eval",
 			payload = { filename, firstline, code },
 		})
 	end)
-	return config.buf[bufnbr].last_msgid
+	return run.buffers[bufnbr].last_msgid
 end
 
 function M.interrupt()
 	local bufnbr = vim.api.nvim_get_current_buf()
-	config.buf[bufnbr].last_msgid = config.buf[bufnbr].last_msgid + 1
+	run.buffers[bufnbr].last_msgid = run.buffers[bufnbr].last_msgid + 1
 	nio.run(function()
-		config.buf[bufnbr].outgoing_queue.put({ msgid = config.buf[bufnbr].last_msgid, type = "interrupt" })
+		run.buffers[bufnbr].outgoing_queue.put({ msgid = run.buffers[bufnbr].last_msgid, type = "interrupt" })
 	end)
-	return config.buf[bufnbr].last_msgid
+	return run.buffers[bufnbr].last_msgid
 end
 
 function M.exit()
 	local bufnbr = vim.api.nvim_get_current_buf()
-	config.buf[bufnbr].last_msgid = config.buf[bufnbr].last_msgid + 1
+	run.buffers[bufnbr].last_msgid = run.buffers[bufnbr].last_msgid + 1
 	nio.run(function()
-		config.buf[bufnbr].outgoing_queue.put({ msgid = config.buf[bufnbr].last_msgid, type = "exit" })
+		run.buffers[bufnbr].outgoing_queue.put({ msgid = run.buffers[bufnbr].last_msgid, type = "exit" })
 	end)
-	return config.buf[bufnbr].last_msgid
+	return run.buffers[bufnbr].last_msgid
 end
 
 function M.configure_session(bufnbr, settings)
@@ -143,19 +144,19 @@ function M.configure_session(bufnbr, settings)
 		bufnbr = vim.api.nvim_get_current_buf()
 	end
 	if settings == nil then
-		settings = config.buf[bufnbr].session_settings
+		settings = run.buffers[bufnbr].session_settings
 	else
-		vim.tbl_extend("force", config.buf[bufnbr].session_settings, settings)
+		vim.tbl_extend("force", run.buffers[bufnbr].session_settings, settings)
 	end
-	config.buf[bufnbr].last_msgid = config.buf[bufnbr].last_msgid + 1
+	run.buffers[bufnbr].last_msgid = run.buffers[bufnbr].last_msgid + 1
 	nio.run(function()
-		config.buf[bufnbr].outgoing_queue.put({
-			msgid = config.buf[bufnbr].last_msgid,
+		run.buffers[bufnbr].outgoing_queue.put({
+			msgid = run.buffers[bufnbr].last_msgid,
 			type = "configure",
 			payload = { settings },
 		})
 	end)
-	return config.buf[bufnbr].last_msgid
+	return run.buffers[bufnbr].last_msgid
 end
 
 return M

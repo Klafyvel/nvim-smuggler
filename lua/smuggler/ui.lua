@@ -6,6 +6,8 @@ local slime = require("smuggler.reslime")
 local protocol = require("smuggler.protocol")
 local config = require("smuggler.config")
 local buffers = require("smuggler.buffers")
+local log = require("smuggler.log")
+local run = require("smuggler.run")
 
 local image = nil
 if config.image_nvim_available() then
@@ -43,7 +45,7 @@ function ui.create_user_commands()
 		count = true,
 	})
 	vim.api.nvim_create_user_command("SmuggleConfig", function(_)
-		buffers.buffer(nil, true, { evalbyblocks = config.eval_by_blocks })
+		buffers.buffer(nil, true, { evalbyblocks = config.buffers.eval_by_blocks })
 	end, {
 		desc = "(Re)configure the current buffer for smuggling.",
 	})
@@ -109,31 +111,17 @@ function ui.create_user_commands()
 	})
 end
 
-function ui.create_mappings(opts)
-	if opts.mappings == false then
-		return
-	elseif opts.mappings == nil then
-		opts.mappings = {}
-	end
+function ui.create_mappings()
 	for i, mapping in pairs(default_mappings) do
 		local key = mapping.key
-		if opts.mappings[i] ~= nil then
-			key = opts.mappings[i]
+		if config.ui.mappings[i] ~= nil then
+			key = config.ui.mappings[i]
 		end
 		vim.api.nvim_set_keymap(mapping.mode, key, mapping.command, mapping.opts)
 	end
 end
 
-function ui.init_ui(opts)
-	opts.evaluated_hl = (opts.evaluated_hl == nil) and "MoreMsg" or opts.evaluated_hl
-	opts.invalidated_hl = (opts.invalidated_hl == nil) and "WarningMsg" or opts.invalidated_hl
-	opts.result_line_length = (opts.result_line_length == nil) and 80 or opts.result_line_length
-	opts.result_hl_group = (opts.result_hl_group == nil) and "DiagnosticVirtualTextInfo"  or opts.result_hl_group
-	config.evaluated_hl = opts.evaluated_hl
-	config.invalidated_hl = opts.invalidated_hl
-    config.result_line_length = opts.result_line_length
-    config.result_hl_group = opts.result_hl_group
-
+function ui.init_ui()
     vim.api.nvim_create_autocmd("WinNew", {
         callback = function(args)
             -- cannot get win id from arguments, and buffer number is not trustworthy
@@ -148,11 +136,11 @@ end
 function ui.hide_chunk_highlights(bufnbr)
 	bufnbr = (bufnbr == nil) and vim.api.nvim_get_current_buf() or bufnbr
 	local namespace = nio.api.nvim_create_namespace("smuggler")
-	for i, chunk in pairs(config.buf[bufnbr].evaluated_chunks) do
+	for i, chunk in pairs(run.buffers[bufnbr].evaluated_chunks) do
 		if chunk.extmark ~= nil then
 			local extmark = vim.api.nvim_buf_get_extmark_by_id(bufnbr, namespace, chunk.extmark, {details=true})
             if #extmark == 0 then -- failed to retrieve the extmark. 
-                config.debug("Failed to retrieve extmark for chunk " .. vim.inspect(chunk) .. ". That's likely a bug in nvim-smuggler")
+                log.warn("Failed to retrieve extmark for chunk " .. vim.inspect(chunk) .. ". That's likely a bug in nvim-smuggler")
             else
                 vim.api.nvim_buf_set_extmark(bufnbr, namespace, extmark[1], extmark[2], {
                     id = chunk.extmark,
@@ -166,12 +154,12 @@ function ui.hide_chunk_highlights(bufnbr)
             end
 		end
 	end
-    config.buf[bufnbr].chunks_shown = false
+    run.buffers[bufnbr].chunks_shown = false
 end
 
 function ui.highlight_chunk(bufnbr, chunk)
 	local namespace = nio.api.nvim_create_namespace("smuggler")
-	local hl_group = chunk.valid and config.evaluated_hl or config.invalidated_hl
+	local hl_group = chunk.valid and config.ui.evaluated_hl or config.ui.invalidated_hl
     local opts = {
         end_row = chunk.linestop - 1,
         end_col = chunk.colstop,
@@ -180,7 +168,7 @@ function ui.highlight_chunk(bufnbr, chunk)
         end_right_gravity = true,
         right_gravity=false
     }
-    if config.debug_enabled then
+    if config.log.level == "debug" then
         opts.hl_group = "TermCursor"
     end
 	if chunk.extmark == nil then
@@ -193,7 +181,7 @@ function ui.highlight_chunk(bufnbr, chunk)
 	else
 		local extmark = vim.api.nvim_buf_get_extmark_by_id(bufnbr, namespace, chunk.extmark, {details=true})
         if #extmark == 0 then -- failed to retrieve the extmark. 
-            config.debug("Failed to retrieve extmark for chunk " .. vim.inspect(chunk) .. ". That's likely a bug in nvim-smuggler")
+            log.warn("Failed to retrieve extmark for chunk " .. vim.inspect(chunk) .. ". That's likely a bug in nvim-smuggler")
         else
             vim.api.nvim_buf_set_extmark(bufnbr, namespace, extmark[1], extmark[2], vim.tbl_extend("force", opts, {
                 id = chunk.extmark,
@@ -207,11 +195,11 @@ end
 
 function ui.place_chunk_highlights(bufnbr)
 	bufnbr = (bufnbr == nil) and vim.api.nvim_get_current_buf() or bufnbr
-	chunks = config.buf[bufnbr].evaluated_chunks
+	chunks = run.buffers[bufnbr].evaluated_chunks
 	for _, chunk in pairs(chunks) do
 		ui.highlight_chunk(bufnbr, chunk)
 	end
-    config.buf[bufnbr].chunks_shown = true
+    run.buffers[bufnbr].chunks_shown = true
 end
 
 function ui.update_chunk_highlights(bufnbr)
@@ -220,7 +208,7 @@ function ui.update_chunk_highlights(bufnbr)
 end
 
 function ui.show_images(bufnbr)
-    for msgid,results in pairs(config.buf[bufnbr].results) do 
+    for msgid,results in pairs(run.buffers[bufnbr].results) do 
         for _,result in pairs(results) do
             if result.images ~= nil then
                 for _,img in pairs(result.images) do 
@@ -232,7 +220,7 @@ function ui.show_images(bufnbr)
 end
 
 function ui.clear_images(bufnbr)
-    for msgid,results in pairs(config.buf[bufnbr].results) do 
+    for msgid,results in pairs(run.buffers[bufnbr].results) do 
         for _,result in pairs(results) do
             if result.images ~= nil then
                 for _,img in pairs(result.images) do 
@@ -245,10 +233,10 @@ end
 
 function ui.add_window(winid)
     local bufnbr = vim.api.nvim_win_get_buf(winid)
-    if config.buf[bufnbr] == nil then
+    if run.buffers[bufnbr] == nil then
         return
     end
-    for msgid,results in pairs(config.buf[bufnbr].results) do 
+    for msgid,results in pairs(run.buffers[bufnbr].results) do 
         for _,result in pairs(results) do
             local type = vim.split(result.mime, "/")
             if type[1] == "image" then
@@ -256,7 +244,7 @@ function ui.add_window(winid)
             end
         end
     end
-    if config.buf[bufnbr].results_shown then
+    if run.buffers[bufnbr].results_shown then
         ui.show_images(bufnbr)
     end
 end
@@ -273,7 +261,7 @@ function ui.add_an_image_to_result(bufnbr, result, winid)
         winlist = {winid}
     end
     for _,win in pairs(winlist) do 
-        config.debug("Loading an image")
+        log.debug("Loading an image")
         local img = image.from_file(result.output, {
             with_virtual_padding = true,
             buffer=bufnbr,
@@ -282,7 +270,7 @@ function ui.add_an_image_to_result(bufnbr, result, winid)
             y = result.firstline,
             height=10
         })
-        config.debug("Image created", img)
+        log.debug("Image created", img)
         if img ~= nil then
             if result.images == nil then
                 result.images = {}
@@ -295,11 +283,11 @@ function ui.add_an_image_to_result(bufnbr, result, winid)
 end
 
 function ui.show_one_result(bufnbr, result)
-	config.debug("Showing bufnbr=" .. bufnbr .. ", result=" .. vim.inspect(result))
-	local line_length = config.result_line_length
+	log.debug("Showing bufnbr=" .. bufnbr .. ", result=" .. vim.inspect(result))
+	local line_length = config.ui.result_line_length
 	local msgid = result.msgid
-	config.debug("Got msgif=" .. msgid)
-	local chunk = config.buf[bufnbr].evaluated_chunks[msgid]
+	log.debug("Got msgid=" .. msgid)
+	local chunk = run.buffers[bufnbr].evaluated_chunks[msgid]
 	if chunk == nil then
 		error("Could not find evaluated chunk corresponding to result " .. vim.inspect(result))
 	end
@@ -316,27 +304,27 @@ function ui.show_one_result(bufnbr, result)
     if type[1] == "image" then
         ui.add_an_image_to_result(bufnbr, result)
     else
-        config.debug("Preparing lines.")
+        log.debug("Preparing lines.")
         if result.output ~= nil then
             local lines = {}
             for line in string.gmatch(result.output, "([^\n]+)") do
                 if string.len(line) < line_length then
                     line = line .. string.rep(" ", line_length - string.len(line))
                 end
-                lines[#lines + 1] = { { line, config.result_hl_group} }
+                lines[#lines + 1] = { { line, config.ui.result_hl_group} }
             end
             local namespace = nio.api.nvim_create_namespace("smuggler")
             result.mark_id = nio.api.nvim_buf_set_extmark(bufnbr, namespace, firstline, 0, { virt_lines = lines })
         end
     end
 	result.shown = true
-	config.debug("Done showing.")
+	log.debug("Done showing.")
 end
 
 function ui.show_evaluation_results(bufnbr)
-	config.debug("Showing evaluation results")
+	log.debug("Showing evaluation results")
 	bufnbr = (bufnbr == nil) and vim.api.nvim_get_current_buf() or bufnbr
-	local buffer = config.buf[bufnbr]
+	local buffer = run.buffers[bufnbr]
 	for msgid, results in pairs(buffer.results) do
 		for i, result in pairs(results) do
 			if not result.shown then
@@ -350,7 +338,7 @@ end
 
 function ui.hide_evaluation_results(bufnbr)
 	bufnbr = (bufnbr == nil) and vim.api.nvim_get_current_buf() or bufnbr
-	local buffer = config.buf[bufnbr]
+	local buffer = run.buffers[bufnbr]
 	local namespace = nio.api.nvim_create_namespace("smuggler")
 	for msgid, results in pairs(buffer.results) do
 		for i, result in pairs(results) do
@@ -390,7 +378,7 @@ end
 
 function ui.show_diagnostics(bufnbr)
 	bufnbr = (bufnbr == nil) and vim.api.nvim_get_current_buf() or bufnbr
-    local buffer = config.buf[bufnbr]
+    local buffer = run.buffers[bufnbr]
 	local namespace = nio.api.nvim_create_namespace("smuggler")
     for _,diagnostic in pairs(buffer.diagnostics) do 
         ui.set_one_diagnostic(bufnbr, diagnostic)
@@ -401,7 +389,7 @@ end
 
 function ui.hide_diagnostics(bufnbr)
 	bufnbr = (bufnbr == nil) and vim.api.nvim_get_current_buf() or bufnbr
-    local buffer = config.buf[bufnbr]
+    local buffer = run.buffers[bufnbr]
 	local namespace = nio.api.nvim_create_namespace("smuggler")
     vim.diagnostic.hide(namespace, bufnbr)
     buffer.diagnostics_shown = false
@@ -409,7 +397,7 @@ end
 
 function ui.show_diagnostic_loclist(bufnbr)
 	bufnbr = (bufnbr == nil) and vim.api.nvim_get_current_buf() or bufnbr
-    local buffer = config.buf[bufnbr]
+    local buffer = run.buffers[bufnbr]
 	local namespace = nio.api.nvim_create_namespace("smuggler")
     if #buffer.diagnostics == 0 then
         return
@@ -444,7 +432,7 @@ end
 function ui.init_buffer(bufnbr)
 	vim.api.nvim_create_autocmd({ "TextChanged", "TextChangedI" }, {
 		callback = function(args)
-			config.buf[bufnbr].update_chunk_display_event.set()
+			run.buffers[bufnbr].update_chunk_display_event.set()
 		end,
 		buffer = bufnbr,
 	})

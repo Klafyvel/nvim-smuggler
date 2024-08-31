@@ -6,6 +6,8 @@ local M = {}
 local protocol = require("smuggler.protocol")
 local config = require("smuggler.config")
 local buffers = require("smuggler.buffers")
+local log = require("smuggler.log")
+local run = require("smuggler.run")
 
 function M.select_block(linestart, linestop, colstart, colstop)
 	result = {}
@@ -28,7 +30,6 @@ function M.send_op(type)
 	local col_stop = nil
 	local text = ""
 
-	config.debug(type)
 	if type == "line" then
 		local tmp = vim.api.nvim_buf_get_mark(bufnbr, "[")
 		row_start = tmp[1]
@@ -42,22 +43,22 @@ function M.send_op(type)
 		row_stop, col_stop = vim.api.nvim_buf_get_mark(bufnbr, "]")
 		text = table.concat(M.select_block(row_start, row_stop, col_start, col_stop), "\n")
 	else -- type == "char"
-		config.debug("Sending data using operator as char ")
+		log.debug("Sending data using operator as char ")
 		local tmp = vim.api.nvim_buf_get_mark(bufnbr, "[")
-		config.debug("start mark is ", tmp)
+		log.debug("start mark is ", tmp)
 		row_start = tmp[1]
 		col_start = tmp[2]
 		tmp = vim.api.nvim_buf_get_mark(bufnbr, "]")
-		config.debug("stop mark is ", tmp)
+		log.debug("stop mark is ", tmp)
 		row_stop = tmp[1] - 1
 		col_stop = tmp[2] + 1
 		text = table.concat(vim.api.nvim_buf_get_text(bufnbr, row_start - 1, col_start, row_stop, col_stop, {}), "\n")
 	end
-	config.debug({ row_start = row_start })
+	log.debug({ row_start = row_start })
 
 	local msgid = protocol.send(text, row_start, vim.api.nvim_buf_get_name(bufnbr))
     local new_chunk = buffers.chunk(row_start, row_stop, col_start, col_stop)
-    local buffer = config.buf[bufnbr]
+    local buffer = run.buffers[bufnbr]
     buffers.delete_intersected_chunks(buffer, new_chunk)
 	buffer.evaluated_chunks[msgid] = new_chunk
 	require("smuggler.ui").update_chunk_highlights()
@@ -79,10 +80,10 @@ function M.send_range(linestart, linestop, colstart, colstop, vmode)
 	elseif vmode == "\x16" then
 		text = table.concat(M.select_block(linestart, linestop, colstart, colstop), "\n")
 	end
-	config.debug(text)
+	log.debug(text)
 	local msgid = protocol.send(text, linestart, vim.api.nvim_buf_get_name(0))
     local new_chunk = buffers.chunk(linestart, linestop, colstart, colstop)
-    local buffer = config.buf[bufnbr]
+    local buffer = run.buffers[bufnbr]
     buffers.delete_intersected_chunks(buffer, new_chunk)
 	buffer.evaluated_chunks[msgid] = new_chunk
 end
@@ -103,7 +104,7 @@ function M.send_lines(count)
 	local msgid = protocol.send(text, rowcol[1], vim.api.nvim_buf_get_name(0))
     local colstop = vim.api.nvim_strwidth(vim.fn.getline(linestop))
     local new_chunk = buffers.chunk(linestart, linestop, 0, colstop)
-    local buffer = config.buf[bufnbr]
+    local buffer = run.buffers[bufnbr]
     buffers.delete_intersected_chunks(buffer, new_chunk)
 	buffer.evaluated_chunks[msgid] = new_chunk
 end

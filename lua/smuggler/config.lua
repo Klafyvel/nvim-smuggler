@@ -1,14 +1,27 @@
-local M = {}
-M.buf = {}
+local config = {}
 
-M.debug_enabled = false
-M.debug_restart = true
+-- Default config
+config.ui = {
+    evaluated_hl = "MoreMsg",
+    invalidated_hl = "WarningMsg",
+    result_line_length = 80,
+    result_hl_group = "DiagnosticVirtualTextInfo",
+    mappings = {}, -- Default mappings are defined in their own file.
+}
 
-if M.debug_enabled then
-	M.log_fh = io.open("smuggler.log", M.debug_restart and "w" or "a")
-end
+config.log = {
+    level = "warn",
+    use_file = false,
+    use_console = true
+}
 
-function M.image_nvim_available()
+config.buffers = {
+    eval_by_blocks = false,
+    showdir = vim.fs.dirname(vim.fn.tempname())
+}
+-- End of default config
+
+function config.image_nvim_available()
     -- The package is available if it's already loaded!
     if package.loaded["image"] ~= nil then
         return true
@@ -18,16 +31,13 @@ function M.image_nvim_available()
     end
 end
 
-function M.debug(...)
-	if M.debug_enabled then
-		local objects = {}
-		for i = 1, select("#", ...) do
-			local v = select(i, ...)
-			table.insert(objects, vim.inspect(v))
-		end
-		M.log_fh:write(table.concat(objects, "\n") .. "\n")
-		M.log_fh:flush()
-	end
+function config.init_config(opts)
+    local sections = {"ui", "log", "buffers"}
+    for _,section in pairs(sections) do
+        if type(opts[section]) == "table" then
+            config[section] = vim.tbl_deep_extend("force", config[section], opts[section])
+        end
+    end
 end
 
-return M
+return config

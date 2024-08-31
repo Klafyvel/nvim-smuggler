@@ -48,17 +48,27 @@ its sole argument. The options are the following (given with their default
 values): 
 ```lua
   {
-    mappings = { -- set to false to disable all mappings.
-      smuggle = "<leader>cs", -- Mapping for Smuggle in normal mode.
-      smuggle_range = "<leader>cs", -- For SmuggleRange in visual mode.
-      smuggle_config = "<leader>ce", -- SmuggleConfig in normal mode.
-      smuggle_operator = "gcs", -- SmuggleOperator in normal mode.
+    ui = {
+        mappings = { -- set to false to disable all mappings.
+          smuggle = "<leader>cs", -- Mapping for Smuggle in normal mode.
+          smuggle_range = "<leader>cs", -- For SmuggleRange in visual mode.
+          smuggle_config = "<leader>ce", -- SmuggleConfig in normal mode.
+          smuggle_operator = "gcs", -- SmuggleOperator in normal mode.
+        },
+        evaluated_hl = "MoreMsg", -- highlight group for evaluated chunks.
+        invalidated_hl = "WarningMsg", -- highlight group for invalidated evaluated chunks.
+        result_line_length = 80, -- line length of displayed results.
+        result_hl_group = "DiagnosticVirtualTextInfo", -- highlight group used for results.
     },
-    eval_by_blocks = false, -- Configure each new session eval by block attribute.
-    evaluated_hl = "MoreMsg", -- highlight group for evaluated chunks.
-    invalidated_hl = "WarningMsg", -- highlight group for invalidated evaluated chunks.
-    result_line_length = 80, -- line length of displayed results.
-    result_hl_group = "DiagnosticVirtualTextInfo", -- highlight group used for results.
+    log = {
+        level = "warn", -- available: trace, debug, info, warn, error, fatal
+        use_file = false, -- output logs to `stdpath("data")/smuggler.log`, e.g. `~/.local/share/nvim/smuggler.log `
+        use_console = true, -- output logs to the console.
+    },
+    buffers = {
+        eval_by_blocks = false, -- Configure each new session eval by block attribute.
+        showdir = vim.fs.dirname(vim.fn.tempname()),
+    },
   }
 ```
 

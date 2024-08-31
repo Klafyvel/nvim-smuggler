@@ -3,6 +3,8 @@ local M = {}
 local nio = require("nio")
 local config = require("smuggler.config")
 local uv = vim.loop
+local run = require("smuggler.run")
+local log = require("smuggler.log")
 
 function M.socketsdir()
 	if vim.fn.has("unix") or vim.fn.has("mac") then
@@ -38,7 +40,7 @@ function M.buffer(bufnbr, force, settings)
 	if bufnbr == nil then
 		bufnbr = vim.api.nvim_get_current_buf()
 	end
-	local current_config = config.buf[bufnbr]
+	local current_config = run.buffers[bufnbr]
 	if force == nil then
 		force = false
 	end
@@ -87,14 +89,14 @@ function M.buffer(bufnbr, force, settings)
         results_shown = true,
         diagnostics_shown = true,
 	}
-    config.buf[bufnbr] = buffer
+    run.buffers[bufnbr] = buffer
 	local ui = require("smuggler.ui")
     local protocol = require("smuggler.protocol")
 	nio.run(function()
 		while true do
-			config.debug("Display loop waiting.")
+			log.debug("Display loop waiting.")
 			nio.first({ buffer.update_result_display_event.wait, buffer.stopped_event.wait })
-			config.debug("Display loop waited.")
+			log.debug("Display loop waited.")
 			if buffer.stopped_event.is_set() then
 				break
 			end
@@ -205,10 +207,10 @@ function M.delete_intersected_chunks(buffer, new_chunk)
     buffer.update_chunk_display_event.set()
 end
 
--- TODO: The [ marks seem to be uncorrectly placed for the very first edit to a buffer,
--- this triggers the invalidation of the block even though it shouldn't...
+--- TODO: The [ marks seem to be uncorrectly placed for the very first edit to a buffer,
+--- this triggers the invalidation of the block even though it shouldn't...
 function M.invalidate_changed_chunks(buffer)
-	config.debug("Invalidating!")
+	log.debug("Invalidating!")
 	local tmp = vim.api.nvim_buf_get_mark(buffer.number, "[")
 	local rowstart = tmp[1]
 	local colstart = tmp[2]
@@ -216,7 +218,7 @@ function M.invalidate_changed_chunks(buffer)
 	local rowstop = tmp[1]
 	local colstop = tmp[2]
     local changed_chunk = M.chunk(rowstart, rowstop, colstart, colstop)
-    config.debug({rowstart=rowstart, colstart=colstart, rowstop=rowstop, colstop=colstop})
+    log.debug({rowstart=rowstart, colstart=colstart, rowstop=rowstop, colstop=colstop})
 	for msgid, chunk in M.find_intersected_chunks(buffer, changed_chunk) do
         chunk.valid = false
 	end

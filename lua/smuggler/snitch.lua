@@ -2,16 +2,18 @@ local M = {}
 
 local config= require("smuggler.config")
 local nio=require("nio")
+local log = require("smuggler.log")
+local run = require("smuggler.run")
 local uv = vim.loop
 
 function M.snitch_error(bufnbr, response)
-  config.debug("Snitching error")
+  log.debug("Snitching error")
   local msgid = response[2]
   local exception_text = response[3][2]
-  config.debug("text is", exception_text)
+  log.debug("text is", exception_text)
   local stacktrace = response[3][3]
-  config.debug("stacktrace is", stacktrace)
-  local buffer = config.buf[bufnbr]
+  log.debug("stacktrace is", stacktrace)
+  local buffer = run.buffers[bufnbr]
   if #buffer.diagnostics >= 1 and buffer.diagnostics[1].msgid ~= msgid then
     buffer.diagnostics = {}
   end
@@ -21,16 +23,16 @@ function M.snitch_error(bufnbr, response)
     msgid = msgid,
     shown = false,
   }
-  config.buf[bufnbr].update_diagnostic_display_event.set()
-  config.debug("Display loop notified.")
+  run.buffers[bufnbr].update_diagnostic_display_event.set()
+  log.debug("Display loop notified.")
 end
 
 function M.snitch_result(bufnbr, response)
   local msgid = response[2]
-  if config.buf[bufnbr].results[msgid] == nil then
-    config.buf[bufnbr].results[msgid] = {}
+  if run.buffers[bufnbr].results[msgid] == nil then
+    run.buffers[bufnbr].results[msgid] = {}
   end
-  local tbl_results = config.buf[bufnbr].results[msgid]
+  local tbl_results = run.buffers[bufnbr].results[msgid]
   local mime = response[4][2]
   local output = response[4][3]
   local result = {
@@ -41,11 +43,11 @@ function M.snitch_result(bufnbr, response)
     shown = false,
   }
   tbl_results[#tbl_results+1] = result
-  config.buf[bufnbr].update_result_display_event.set()
+  run.buffers[bufnbr].update_result_display_event.set()
 end
 
 function M.snitch(bufnbr, response)
-  config.debug("Snitching :D ", response[1], response[2])
+  log.debug("Snitching :D ", response[1], response[2])
   if response[3] == vim.NIL then
       return M.snitch_result(bufnbr, response)
   else
