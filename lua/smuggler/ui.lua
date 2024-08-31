@@ -151,15 +151,19 @@ function ui.hide_chunk_highlights(bufnbr)
 	for i, chunk in pairs(config.buf[bufnbr].evaluated_chunks) do
 		if chunk.extmark ~= nil then
 			local extmark = vim.api.nvim_buf_get_extmark_by_id(bufnbr, namespace, chunk.extmark, {details=true})
-			vim.api.nvim_buf_set_extmark(bufnbr, namespace, extmark[1], extmark[2], {
-				id = chunk.extmark,
-				end_row = extmark[3].end_row,
-                end_col = extmark[3].end_col,
-				sign_text = "",
-				sign_hl_group = "",
-                end_right_gravity = true,
-                right_gravity=false,
-			})
+            if #extmark == 0 then -- failed to retrieve the extmark. 
+                config.debug("Failed to retrieve extmark for chunk " .. vim.inspect(chunk) .. ". That's likely a bug in nvim-smuggler")
+            else
+                vim.api.nvim_buf_set_extmark(bufnbr, namespace, extmark[1], extmark[2], {
+                    id = chunk.extmark,
+                    end_row = extmark[3].end_row,
+                    end_col = extmark[3].end_col,
+                    sign_text = "",
+                    sign_hl_group = "",
+                    end_right_gravity = true,
+                    right_gravity=false,
+                })
+            end
 		end
 	end
     config.buf[bufnbr].chunks_shown = false
@@ -188,11 +192,15 @@ function ui.highlight_chunk(bufnbr, chunk)
 		end
 	else
 		local extmark = vim.api.nvim_buf_get_extmark_by_id(bufnbr, namespace, chunk.extmark, {details=true})
-		vim.api.nvim_buf_set_extmark(bufnbr, namespace, extmark[1], extmark[2], vim.tbl_extend("force", opts, {
-			id = chunk.extmark,
-			end_row = extmark[3].end_row,
-            end_col = extmark[3].end_col
-		}))
+        if #extmark == 0 then -- failed to retrieve the extmark. 
+            config.debug("Failed to retrieve extmark for chunk " .. vim.inspect(chunk) .. ". That's likely a bug in nvim-smuggler")
+        else
+            vim.api.nvim_buf_set_extmark(bufnbr, namespace, extmark[1], extmark[2], vim.tbl_extend("force", opts, {
+                id = chunk.extmark,
+                end_row = extmark[3].end_row,
+                end_col = extmark[3].end_col
+            }))
+        end
 	end
 	return chunk
 end
@@ -309,15 +317,17 @@ function ui.show_one_result(bufnbr, result)
         ui.add_an_image_to_result(bufnbr, result)
     else
         config.debug("Preparing lines.")
-        local lines = {}
-        for line in string.gmatch(result.output, "([^\n]+)") do
-            if string.len(line) < line_length then
-                line = line .. string.rep(" ", line_length - string.len(line))
+        if result.output ~= nil then
+            local lines = {}
+            for line in string.gmatch(result.output, "([^\n]+)") do
+                if string.len(line) < line_length then
+                    line = line .. string.rep(" ", line_length - string.len(line))
+                end
+                lines[#lines + 1] = { { line, config.result_hl_group} }
             end
-            lines[#lines + 1] = { { line, config.result_hl_group} }
+            local namespace = nio.api.nvim_create_namespace("smuggler")
+            result.mark_id = nio.api.nvim_buf_set_extmark(bufnbr, namespace, firstline, 0, { virt_lines = lines })
         end
-        local namespace = nio.api.nvim_create_namespace("smuggler")
-        result.mark_id = nio.api.nvim_buf_set_extmark(bufnbr, namespace, firstline, 0, { virt_lines = lines })
     end
 	result.shown = true
 	config.debug("Done showing.")

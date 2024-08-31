@@ -189,14 +189,16 @@ function M.delete_intersected_chunks(buffer, new_chunk)
             end
         end
         vim.api.nvim_buf_del_extmark(buffer.number, namespace, chunk.extmark)
-        for _,result in pairs(buffer.results[msgid]) do 
-            if result.images ~= nil then
-                for _,img in pairs(result.images) do 
-                    img:clear()
+        if buffer.results[msgid] ~= nil then
+            for _,result in pairs(buffer.results[msgid]) do 
+                if result.images ~= nil then
+                    for _,img in pairs(result.images) do 
+                        img:clear()
+                    end
                 end
             end
+            buffer.results[msgid] = nil
         end
-        buffer.results[msgid] = nil
         buffer.evaluated_chunks[msgid] = nil
 	end
     buffer.update_result_display_event.set()
