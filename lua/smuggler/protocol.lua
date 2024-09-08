@@ -6,6 +6,8 @@ local config = require("smuggler.config")
 local snitch = require("smuggler.snitch")
 local buffers = require("smuggler.buffers")
 local run = require("smuggler.run")
+local log = require("smuggler.log")
+local mpack = require("smuggler.partial_mpack")
 
 function M.serialize_requests(bufnbr)
 	local bufconfig = run.buffers[bufnbr]
@@ -16,6 +18,7 @@ function M.serialize_requests(bufnbr)
 		if data.payload == nil then
 			data.payload = {}
 		end
+        log.trace("Serializing request", data)
 		handle:write(vim.mpack.encode({ 0x00, data.msgid, data.type, data.payload }))
 	end
 end
@@ -28,19 +31,42 @@ function M.deserialize_answers(bufnbr)
 	local handle = bufconfig.socket
 	local queue = bufconfig.incoming_queue
 	local buffer = ""
+    log.trace("Starting deserialization thread.")
 	handle:read_start(function(err, chunk)
 		if err then
+            log.fatal("Error while reading stream: ", err)
 			error("Error while reading stream: " .. vim.inspect(err))
 			bufconfig.stopped_event.set()
 		elseif chunk then
 			buffer = buffer .. chunk
-			local parsed, res = pcall(vim.mpack.decode, buffer)
-			if parsed then
-				buffer = ""
-				nio.run(function()
-					queue.put(res)
-				end)
-			end
+            local success = true
+            local result = nil
+            local offset = 1
+            while success do
+                log.trace("Attempting to decode new buffer=", buffer)
+                success, result, offset = mpack.decode_one(buffer)
+                log.trace("Decoded ", offset, " bytes with success=", success)
+                if success then
+                    log.trace("Deserialized answer.", result)
+                    if offset == #buffer then
+                        buffer = ""
+                    else
+                        buffer = string.sub(buffer, offset-#buffer)
+                    end
+                    nio.run(function()
+                        queue.put(result)
+                    end)
+                elseif offset > 0 then
+                    error("Failed to decode message.")
+                    log.error("Failed to decode chunk of length ", offset, " in buffer: ", buffer)
+                    if offset == #buffer then
+                        buffer = ""
+                    else
+                        buffer = string.sub(buffer, offset-#buffer)
+                    end
+                end
+                log.trace("Buffer is now:", buffer)
+            end
 		end
 	end)
 	bufconfig.stopped_event.wait()
@@ -54,11 +80,14 @@ function M.treat_incoming(bufnbr)
 	local bufconfig = run.buffers[bufnbr]
 	local queue = bufconfig.incoming_queue
 	while not bufconfig.stopped_event.is_set() do
+        log.trace("Waiting incoming.")
 		local value = queue.get()
+        log.trace("Received incoming:", value)
 		if value == nil then
 			break
 		elseif value[1] == 2 then -- Received a notification.
 			if value[2] == "handshake" then
+                log.trace("Received handshake.")
 				-- TODO: perform version control here?
 				bufconfig.session_initialized_event.set()
 			elseif value[2] == "diagnostic" then
@@ -77,26 +106,34 @@ end
 function M.runclient(bufnbr)
 	local bufconfig = run.buffers[bufnbr]
 	bufconfig.socket = uv.new_pipe(true)
+    log.debug("Connecting socket.")
 	bufconfig.socket:connect(bufconfig.path, function(err)
 		if err ~= nil then
+            log.fatal("Connection error: ", err)
 			error("Could not connect to socket. " .. vim.inspect(err))
+            log.fatal("Setting stop buffer event.")
 			bufconfig.stopped_event.set()
 		end
+        log.trace("Setting connected buffer event.")
 		bufconfig.session_connected_event.set()
 	end)
 	nio.run(function()
+        log.trace("Waiting for session initialization before serialization starts.")
 		bufconfig.session_initialized_event.wait()
 		M.serialize_requests(bufnbr)
 	end)
 	nio.run(function()
+        log.trace("Waiting for session initialization before session configuration.")
 		bufconfig.session_initialized_event.wait()
 		M.configure_session(bufnbr)
 	end)
 	nio.run(function()
+        log.trace("Waiting for session connection before deserialization starts.")
 		bufconfig.session_connected_event.wait()
 		M.deserialize_answers(bufnbr)
 	end)
 	nio.run(function()
+        log.trace("Waiting for session connection before requests treatement starts.")
 		bufconfig.session_connected_event.wait()
 		M.treat_incoming(bufnbr)
 	end)

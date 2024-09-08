@@ -337,6 +337,7 @@ function ui.show_evaluation_results(bufnbr)
 	end
     ui.show_images(bufnbr)
     buffer.results_shown = true
+    log.debug("Evaluation results shown.")
 end
 
 function ui.hide_evaluation_results(bufnbr)
