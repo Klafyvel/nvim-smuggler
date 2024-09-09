@@ -105,19 +105,21 @@ LUA API                                                     *smuggler-lua-api*
 The commands listed in |smuggler-usage| call the following lua functions.
 
                                                      *smuggler-lua-send-lines*
-  send_lines(count)     Send `count` lines starting from the current line.
+  send_lines(bufnbr, count)     
+                        Send `count` lines starting from the current line.
 
                                                      *smuggler-lua-send-range*
-  send_range(l1, l2)    Send the lines `l1` to `l2`, inclusive and 1-indexed.
+  send_range(bufnbr, l1, l2)
+                        Send the lines `l1` to `l2`, inclusive and 1-indexed.
 
                                                       *smuggler-lua-interrupt*
-  interrupt()           Interrupt the current command.
+  interrupt(bufnbr)     Interrupt the current command.
 
                                                            *smuggler-lua-exit*
-  exit()                Exit the current session.
+  exit(bufnbr)          Exit the current session.
 
                                               *smuggler-lua-configure_session*
-  configure_session(settings)
+  configure_session(bufnbr, settings)
                         Configure the current session with the given settings.
                         The available settings are defined in
                         REPLSmuggler.jl's protocol.

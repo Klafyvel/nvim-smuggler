@@ -20,92 +20,95 @@ ui.SMUGGLER_SIGN_GROUP = "smuggler"
 
 function ui.create_user_commands()
 	vim.api.nvim_create_user_command("SmuggleRange", function(cmdargs)
-		slime.send_range(cmdargs.line1, cmdargs.line2)
-		ui.update_chunk_highlights()
+        local bufnbr = vim.api.nvim_get_current_buf()
+		slime.send_range(bufnbr, cmdargs.line1, cmdargs.line2)
+		ui.update_chunk_highlights(bufnbr)
 	end, {
 		desc = "Send a range of Julia code to the REPL.",
 		range = true,
 	})
 	vim.api.nvim_create_user_command("SmuggleVisual", function(cmdargs)
+        local bufnbr = vim.api.nvim_get_current_buf()
 		local startpos = vim.fn.getpos("'<")
 		local endpos = vim.fn.getpos("'>")
 		vmode = vim.fn.visualmode()
-		slime.send_range(cmdargs.line1, cmdargs.line2, startpos[3], endpos[3], vmode)
-		ui.update_chunk_highlights()
+		slime.send_range(bufnbr, cmdargs.line1, cmdargs.line2, startpos[3], endpos[3], vmode)
+		ui.update_chunk_highlights(bufnbr)
 	end, {
 		desc = "Send the visual selection to the REPL.",
 		range = true, -- Allow range for convenience (calls from visual mode) even
 		-- if they are ignored.
 	})
 	vim.api.nvim_create_user_command("Smuggle", function(cmdargs)
-		slime.send_lines(cmdargs.count)
-		ui.update_chunk_highlights()
+        local bufnbr = vim.api.nvim_get_current_buf()
+		slime.send_lines(bufnbr, cmdargs.count)
+		ui.update_chunk_highlights(bufnbr)
 	end, {
 		desc = "Send Julia code to the REPL.",
 		count = true,
 	})
 	vim.api.nvim_create_user_command("SmuggleConfig", function(_)
-		buffers.buffer(nil, true, { evalbyblocks = config.buffers.eval_by_blocks })
+		buffers.buffer(vim.api.nvim_get_current_buf(), true, { evalbyblocks = config.buffers.eval_by_blocks })
 	end, {
 		desc = "(Re)configure the current buffer for smuggling.",
 	})
 	vim.api.nvim_create_user_command("SmuggleInterrupt", function(_)
-		protocol.interrupt()
+		protocol.interrupt(vim.api.nvim_get_current_buf())
 	end, {
 		desc = "Interrupt the current execution",
 	})
 	vim.api.nvim_create_user_command("SmuggleExit", function(_)
-		protocol.exit()
+		protocol.exit(vim.api.nvim_get_current_buf())
 	end, {
 		desc = "Exit the current smuggler session.",
 	})
 	vim.api.nvim_create_user_command("SmuggleEvalByBlocks", function(_)
-		protocol.configure_session(nil, { evalbyblocks = true })
+		protocol.configure_session(vim.api.nvim_get_current_buf(), { evalbyblocks = true })
 	end, {
 		desc = "Configure the session to evaluate entries by block.",
 	})
 	vim.api.nvim_create_user_command("SmuggleEvalByStatement", function(_)
-		protocol.configure_session(nil, { evalbyblocks = false })
+		protocol.configure_session(vim.api.nvim_get_current_buf(), { evalbyblocks = false })
 	end, {
 		desc = "Configure the session to evaluate entries by toplevel statements.",
 	})
 	vim.api.nvim_create_user_command("SmuggleHideDiagnostics", function(_)
-		ui.hide_diagnostics()
+		ui.hide_diagnostics(vim.api.nvim_get_current_buf())
 	end, {
 		desc = "Hide smuggler's diagnostics.",
 	})
 	vim.api.nvim_create_user_command("SmuggleShowDiagnostics", function(_)
-		ui.show_diagnostics()
+		ui.show_diagnostics(vim.api.nvim_get_current_buf())
 	end, {
 		desc = "Show smuggler's diagnostics.",
 	})
 	vim.api.nvim_create_user_command("SmuggleLocList", function(_)
-		ui.show_diagnostic_loclist()
+		ui.show_diagnostic_loclist(vim.api.nvim_get_current_buf())
 	end, {
 		desc = "Show smuggler's diagnostics loclist.",
 	})
 	vim.api.nvim_create_user_command("SmuggleHideLocList", function(_)
-		ui.hide_diagnostic_loclist()
+		ui.hide_diagnostic_loclist(vim.api.nvim_get_current_buf())
 	end, {
 		desc = "Hide smuggler's diagnostics loclist.",
 	})
 	vim.api.nvim_create_user_command("SmuggleHideEvaluated", function(_)
-		ui.hidechunk_highlights()
+		ui.hidechunk_highlights(vim.api.nvim_get_current_buf())
 	end, {
 		desc = "Hide highlight around evaluated chunks.",
 	})
 	vim.api.nvim_create_user_command("SmuggleShowEvaluated", function(_)
-		ui.place_chunk_highlights()
+		ui.place_chunk_highlights(vim.api.nvim_get_current_buf())
 	end, {
 		desc = "Show highlight around evaluated chunks.",
 	})
 	vim.api.nvim_create_user_command("SmuggleHideResults", function(_)
-		ui.hide_evaluation_results()
+		ui.hide_evaluation_results(vim.api.nvim_get_current_buf())
 	end, {
 		desc = "Hide evaluation results.",
 	})
 	vim.api.nvim_create_user_command("SmuggleShowResults", function(_)
-		ui.show_evaluation_results()
+		ui.show_evaluation_results(vim.api.nvim_get_current_buf())
 	end, {
 		desc = "Show evaluation results.",
 	})
@@ -203,6 +206,7 @@ function ui.place_chunk_highlights(bufnbr)
 end
 
 function ui.update_chunk_highlights(bufnbr)
+    log.trace("Updating chunk highlights with bufnbr=", bufnbr)
 	ui.hide_chunk_highlights(bufnbr)
 	ui.place_chunk_highlights(bufnbr)
 end
