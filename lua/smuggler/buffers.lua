@@ -7,13 +7,15 @@ local run = require("smuggler.run")
 local log = require("smuggler.log")
 
 function M.socketsdir()
-	if vim.fn.has("unix") or vim.fn.has("mac") then
-		return "/run/user/" .. tostring(uv.getuid()) .. "/julia/replsmuggler/"
-	elseif vim.fn.has("win32") then
-		return "\\\\.\\pipe\\"
-	else
-		error("Unsupported platform.")
-	end
+    if vim.fn.has("mac") == 1 then
+        return vim.fn.expand("$HOME") .. "/Library/Application Support/lang.julia.REPLSmuggler/"
+    elseif vim.fn.has("unix") == 1 then
+        return "/run/user/" .. tostring(uv.getuid()) .. "/julia/replsmuggler/"
+    elseif vim.fn.has("win32") == 1 then
+        return "\\\\.\\pipe\\"
+    else
+        error("Unsupported platform.")
+    end
 end
 
 function M.getavailablesockets()
