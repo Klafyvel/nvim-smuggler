@@ -20,6 +20,7 @@ config.log = {
 
 config.buffers = {
     eval_by_blocks = false,
+    autoselect_single_socket=true,
     showdir = vim.fs.dirname(vim.fn.tempname()),
     iocontext = {
         compact = true,

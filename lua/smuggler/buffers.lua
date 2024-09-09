@@ -27,17 +27,22 @@ end
 
 function M.choosesocket(buffer)
 	local sockets = M.getavailablesockets()
-	vim.ui.select(sockets, {
-		prompt = "Select a socket:",
-	}, function(c)
-        if c == nil then 
-            buffer.stopped_event.set()
-            buffer.socket_chosen_event.set()
-        else 
-            buffer.path = c
-            buffer.socket_chosen_event.set()
-        end
-	end)
+    if #sockets == 1 and config.buffers.autoselect_single_socket then
+        buffer.path = sockets[1]
+        buffer.socket_chosen_event.set()
+    else
+        vim.ui.select(sockets, {
+            prompt = "Select a socket:",
+        }, function(c)
+            if c == nil then 
+                buffer.stopped_event.set()
+                buffer.socket_chosen_event.set()
+            else 
+                buffer.path = c
+                buffer.socket_chosen_event.set()
+            end
+        end)
+    end
 end
 
 function M.buffer(bufnbr, force, settings)

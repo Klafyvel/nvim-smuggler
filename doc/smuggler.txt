@@ -192,6 +192,8 @@ values): >
     },
     buffers = {
         eval_by_blocks = false, -- Configure each new session eval by block attribute.
+        autoselect_single_socket=true, -- When true, skip socket selection
+        -- dialog if there's only one choice possible.
         showdir = vim.fs.dirname(vim.fn.tempname()),
         iocontext = { -- Julia's IOContext
         -- (https://docs.julialang.org/en/v1/base/io-network/#Base.IOContext-Tuple%7BIO,%20Pair%7D)
