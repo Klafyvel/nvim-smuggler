@@ -105,6 +105,9 @@ end
 
 function M.runclient(bufnbr)
 	local bufconfig = run.buffers[bufnbr]
+    if bufconfig.path == nil then
+        return
+    end
 	bufconfig.socket = uv.new_pipe(true)
     log.debug("Connecting socket.")
 	bufconfig.socket:connect(bufconfig.path, function(err)
@@ -139,8 +142,7 @@ function M.runclient(bufnbr)
 	end)
 end
 
-function M.send(code, firstline, filename)
-	local bufnbr = vim.api.nvim_get_current_buf()
+function M.send(bufnbr, code, firstline, filename)
 	if filename == nil then
 		filename = vim.api.nvim_buf_get_name(bufnbr)
 	end
@@ -158,8 +160,7 @@ function M.send(code, firstline, filename)
 	return run.buffers[bufnbr].last_msgid
 end
 
-function M.interrupt()
-	local bufnbr = vim.api.nvim_get_current_buf()
+function M.interrupt(bufnbr)
 	run.buffers[bufnbr].last_msgid = run.buffers[bufnbr].last_msgid + 1
 	nio.run(function()
 		run.buffers[bufnbr].outgoing_queue.put({ msgid = run.buffers[bufnbr].last_msgid, type = "interrupt" })
@@ -167,8 +168,7 @@ function M.interrupt()
 	return run.buffers[bufnbr].last_msgid
 end
 
-function M.exit()
-	local bufnbr = vim.api.nvim_get_current_buf()
+function M.exit(bufnbr)
 	run.buffers[bufnbr].last_msgid = run.buffers[bufnbr].last_msgid + 1
 	nio.run(function()
 		run.buffers[bufnbr].outgoing_queue.put({ msgid = run.buffers[bufnbr].last_msgid, type = "exit" })

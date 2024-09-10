@@ -25,15 +25,24 @@ function M.getavailablesockets()
 	return res
 end
 
-function M.choosesocket()
+function M.choosesocket(buffer)
 	local sockets = M.getavailablesockets()
-	local choice = nil
-	vim.ui.select(sockets, {
-		prompt = "Select a socket:",
-	}, function(c)
-		choice = c
-	end)
-	return choice
+    if #sockets == 1 and config.buffers.autoselect_single_socket then
+        buffer.path = sockets[1]
+        buffer.socket_chosen_event.set()
+    else
+        vim.ui.select(sockets, {
+            prompt = "Select a socket:",
+        }, function(c)
+            if c == nil then 
+                buffer.stopped_event.set()
+                buffer.socket_chosen_event.set()
+            else 
+                buffer.path = c
+                buffer.socket_chosen_event.set()
+            end
+        end)
+    end
 end
 
 function M.buffer(bufnbr, force, settings)
@@ -55,16 +64,12 @@ function M.buffer(bufnbr, force, settings)
 	end
     settings = vim.tbl_extend("keep", settings, default_settings)
 	if current_config ~= nil then
-		local closed = current_config.socket:is_closing()
+		local closed = current_config.socket == nil or current_config.socket:is_closing()
 		if not closed and not force then
 			return current_config
 		elseif not closed and force then
 			current_config.socket:close()
 		end
-	end
-	local socket_path = M.choosesocket()
-	if socket_path == nil then
-		return -1
 	end
     local bufname = vim.fn.bufname(bufnbr)
     local splitted_name = vim.split(vim.fs.basename(bufname), ".")[1]
@@ -72,9 +77,10 @@ function M.buffer(bufnbr, force, settings)
 	local buffer = {
 		number = bufnbr,
 		socket = nil,
-		path = socket_path,
+		path = nil,
 		incoming_queue = nio.control.queue(),
 		outgoing_queue = nio.control.queue(),
+        socket_chosen_event = nio.control.event(),
 		session_connected_event = nio.control.event(),
 		session_initialized_event = nio.control.event(),
 		session_settings = settings,
@@ -92,6 +98,7 @@ function M.buffer(bufnbr, force, settings)
         diagnostics_shown = true,
 	}
     run.buffers[bufnbr] = buffer
+	M.choosesocket(buffer)
 	local ui = require("smuggler.ui")
     local protocol = require("smuggler.protocol")
 	nio.run(function()
@@ -128,6 +135,7 @@ function M.buffer(bufnbr, force, settings)
         end
     end)
 	nio.run(function()
+        buffer.socket_chosen_event.wait()
 		protocol.runclient(buffer.number)
 	end)
 	ui.init_buffer(bufnbr)
