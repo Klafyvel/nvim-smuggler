@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.4.0](https://github.com/Klafyvel/nvim-smuggler/compare/v0.3.0...v0.4.0) (2024-09-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* **config:** Changed the organization of configuration. See documentation.
+* **ui:** THe syntax for the configuration of mappings changed. See the documentation `:help smuggler-configuration` for details.
+
+### Features
+
+* **buffers:** Delete invalidated chunks and results when evaluating a new chunk. ([f91987d](https://github.com/Klafyvel/nvim-smuggler/commit/f91987d77dc530147ab822908b05dc5fd6839407))
+* **config:** Add a configuration option to not show evaluation results and images. ([fb8a6a2](https://github.com/Klafyvel/nvim-smuggler/commit/fb8a6a246fbd1a97a6a23f56a2b600755ce1c0e7))
+* **config:** Added a configuration option for images sizes. ([32009b1](https://github.com/Klafyvel/nvim-smuggler/commit/32009b13de5c58ac1500b46bce219f3deb81276b))
+* **config:** Implement Julia's IOContext buffer settings. ([c07fe8a](https://github.com/Klafyvel/nvim-smuggler/commit/c07fe8a2a13f0a4516a44ad0ef06ab39efd807ad))
+* **configuration:** Add an option to automatically select the only available socket when applicable. ([8e74d4b](https://github.com/Klafyvel/nvim-smuggler/commit/8e74d4bec8848e79cfa3869d90f312af01c06184))
+* **images:** Display image results if image.nvim is present! ([9e49b38](https://github.com/Klafyvel/nvim-smuggler/commit/9e49b384b137cb36a02df1c095927b6857a01dd9))
+* **protocol:** Perform protocol version verification after handshake. ([255bd8c](https://github.com/Klafyvel/nvim-smuggler/commit/255bd8c333c4bb1b0191370082e236bb9b2d90a1))
+* **results:** Display evaluation results. ([7f85b72](https://github.com/Klafyvel/nvim-smuggler/commit/7f85b724c0a524ca649dda3e106af9a4c2f79216))
+* **ui:** Added configuration options for display of results. ([a869907](https://github.com/Klafyvel/nvim-smuggler/commit/a8699071139106e856444974aa83f7fae3a76a62))
+* **ui:** Highlight evaluated chunks in buffers. ([f02c41d](https://github.com/Klafyvel/nvim-smuggler/commit/f02c41d1576deaf70d493f29e5d3a4844c4da4bc))
+
+
+### Bug Fixes
+
+* **buffers:** Detect chunks invalidation consistently. ([1cd54ca](https://github.com/Klafyvel/nvim-smuggler/commit/1cd54ca5f29c0be421854b64993a08dcaeb819ad))
+* **client:** Fix async socket selection. ([de6e60d](https://github.com/Klafyvel/nvim-smuggler/commit/de6e60dc450bfde4a5f210a58b4a7b0b3453b70f))
+* **client:** Smarter client to handle partial or overlapping server responses. ([cef2b4e](https://github.com/Klafyvel/nvim-smuggler/commit/cef2b4e025ab4f6f2e4b1b4b580f87f56311e3ef))
+* **reslime:** set column position correctly for smuggling visual lines. ([37b7d42](https://github.com/Klafyvel/nvim-smuggler/commit/37b7d42269824cb93c2d76aa803d26443b33c383))
+* **socket:** Fix default socket directory for MacOS. ([aeaf90f](https://github.com/Klafyvel/nvim-smuggler/commit/aeaf90f093a8e1aefa382cef20035b416cf26d6d))
+* **ui:** nil-guard results display. ([8afc63c](https://github.com/Klafyvel/nvim-smuggler/commit/8afc63c20300ca2840a8e2c9dd4748492c8d3703))
+
+
+### Miscellaneous Chores
+
+* release 0.4 ([3dc71b5](https://github.com/Klafyvel/nvim-smuggler/commit/3dc71b51c4ba837ddad6b70a3b23cc3c48497422))
+
+
+### Code Refactoring
+
+* **config:** Spearate logging, configuration, and application status. ([50ae13f](https://github.com/Klafyvel/nvim-smuggler/commit/50ae13f8c28953ce45bc0c606e504f7adbdc51f4))
+* **ui:** Created a dedicated module for managing the ui. ([cc4e6dd](https://github.com/Klafyvel/nvim-smuggler/commit/cc4e6dda3515aa049d2e0ab9269b815476a319ad))
+
 ## [0.3.0](https://github.com/Klafyvel/nvim-smuggler/compare/v0.2.0...v0.3.0) (2024-08-11)
 
 
