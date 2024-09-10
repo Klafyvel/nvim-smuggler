@@ -1,5 +1,9 @@
 local M = {}
 
+-- SemVer protocol version compatibility
+M.PROTOCOL_VERSION = vim.version.parse("0.4.x")
+
+
 local uv = vim.loop
 local nio = require("nio")
 local config = require("smuggler.config")
@@ -76,6 +80,27 @@ function M.deserialize_answers(bufnbr)
 	end)
 end
 
+function format_version(ver)
+    return string.format("%d.%d.%d", ver.major, ver.minor, ver.patch)
+end
+
+function M.verify_protocol(handshake)
+    local servername,serverprotocolversion = unpack(handshake)
+    serverprotocolversion = vim.version.parse(serverprotocolversion)
+    local success = true
+    if servername ~= "REPLSmuggler" then
+        log.warn("The server is not REPLSmuggler, but ", servername, ".")
+    end
+    if vim.version.gt(M.PROTOCOL_VERSION, serverprotocolversion) then
+        log.fatal("The server uses version: " .. format_version(serverprotocolversion).. " and we expect: " .. format_version(M.PROTOCOL_VERSION) .. ". Consider upgrading REPLSmuggler.jl.")
+        success = false
+    elseif vim.version.lt(M.PROTOCOL_VERSION, serverprotocolversion) then
+        log.fatal("The server uses version: " .. format_version(serverprotocolversion).. " and we expect: " .. format_version(M.PROTOCOL_VERSION) .. ". Consider upgrading nvim-smuggler.")
+        success = false
+    end
+    return success
+end
+
 function M.treat_incoming(bufnbr)
 	local bufconfig = run.buffers[bufnbr]
 	local queue = bufconfig.incoming_queue
@@ -87,8 +112,11 @@ function M.treat_incoming(bufnbr)
 			break
 		elseif value[1] == 2 then -- Received a notification.
 			if value[2] == "handshake" then
-                log.trace("Received handshake.")
-				-- TODO: perform version control here?
+                log.trace("Received handshake.", value[3])
+                local handshakevalid = M.verify_protocol(value[3])
+                if not handshakevalid then
+                    bufconfig.stopped_event.set()
+                end
 				bufconfig.session_initialized_event.set()
 			elseif value[2] == "diagnostic" then
 				snitch.snitch(bufnbr, value)
