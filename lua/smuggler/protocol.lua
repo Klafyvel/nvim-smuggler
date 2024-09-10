@@ -4,194 +4,196 @@ local uv = vim.loop
 local nio = require("nio")
 local config = require("smuggler.config")
 local snitch = require("smuggler.snitch")
+local buffers = require("smuggler.buffers")
+local run = require("smuggler.run")
+local log = require("smuggler.log")
+local mpack = require("smuggler.partial_mpack")
 
-function M.socketsdir()
-  if vim.fn.has("unix") or vim.fn.has("mac") then
-    return "/run/user/" .. tostring(uv.getuid()) .. "/julia/replsmuggler/"
-  elseif vim.fn.has("win32") then
-    return "\\\\.\\pipe\\"
-  else
-    error("Unsupported platform.")
-  end
+function M.serialize_requests(bufnbr)
+	local bufconfig = run.buffers[bufnbr]
+	local queue = bufconfig.outgoing_queue
+	local handle = bufconfig.socket
+	while not bufconfig.stopped_event.is_set() do
+		local data = queue.get()
+		if data.payload == nil then
+			data.payload = {}
+		end
+        log.trace("Serializing request", data)
+		handle:write(vim.mpack.encode({ 0x00, data.msgid, data.type, data.payload }))
+	end
 end
 
-function M.getavailablesockets()
-  local directory = M.socketsdir()
-  local res = {}
-  for v in vim.fs.dir(directory) do
-    res[#res + 1] = directory .. v
-  end
-  return res
+function M.deserialize_answers(bufnbr)
+	local bufconfig = run.buffers[bufnbr]
+	if bufconfig.stopped_event.is_set() then
+		return
+	end
+	local handle = bufconfig.socket
+	local queue = bufconfig.incoming_queue
+	local buffer = ""
+    log.trace("Starting deserialization thread.")
+	handle:read_start(function(err, chunk)
+		if err then
+            log.fatal("Error while reading stream: ", err)
+			error("Error while reading stream: " .. vim.inspect(err))
+			bufconfig.stopped_event.set()
+		elseif chunk then
+			buffer = buffer .. chunk
+            local success = true
+            local result = nil
+            local offset = 1
+            while success do
+                log.trace("Attempting to decode new buffer=", buffer)
+                success, result, offset = mpack.decode_one(buffer)
+                log.trace("Decoded ", offset, " bytes with success=", success)
+                if success then
+                    log.trace("Deserialized answer.", result)
+                    if offset == #buffer then
+                        buffer = ""
+                    else
+                        buffer = string.sub(buffer, offset-#buffer)
+                    end
+                    nio.run(function()
+                        queue.put(result)
+                    end)
+                elseif offset > 0 then
+                    error("Failed to decode message.")
+                    log.error("Failed to decode chunk of length ", offset, " in buffer: ", buffer)
+                    if offset == #buffer then
+                        buffer = ""
+                    else
+                        buffer = string.sub(buffer, offset-#buffer)
+                    end
+                end
+                log.trace("Buffer is now:", buffer)
+            end
+		end
+	end)
+	bufconfig.stopped_event.wait()
+	handle:read_stop()
+	nio.run(function()
+		queue.put(nil)
+	end)
 end
 
-function M.choosesocket()
-  local sockets = M.getavailablesockets()
-  local choice = nil
-  vim.ui.select(sockets, {
-    prompt = 'Select a socket:',
-  }, function(c)
-    choice = c
-  end)
-  return choice
+function M.treat_incoming(bufnbr)
+	local bufconfig = run.buffers[bufnbr]
+	local queue = bufconfig.incoming_queue
+	while not bufconfig.stopped_event.is_set() do
+        log.trace("Waiting incoming.")
+		local value = queue.get()
+        log.trace("Received incoming:", value)
+		if value == nil then
+			break
+		elseif value[1] == 2 then -- Received a notification.
+			if value[2] == "handshake" then
+                log.trace("Received handshake.")
+				-- TODO: perform version control here?
+				bufconfig.session_initialized_event.set()
+			elseif value[2] == "diagnostic" then
+				snitch.snitch(bufnbr, value)
+			else
+				error("Unexpected notification call." .. vim.inspect(value))
+			end
+		elseif value[1] == 1 then -- This is an answer.
+			snitch.snitch(bufnbr, value)
+		else -- Something unexpected happened.
+			error("Unexpected value received." .. vim.inspect(value))
+		end
+	end
 end
 
-function M.serialize_requests(handle, queue)
-  local msgid = 0
-  while not handle:is_closing() do
-    local data = queue.get()
-    if data.payload == nil then
-      data.payload = {}
-    end
-    config.debug("Sending data: ", data)
-    handle:write(vim.mpack.encode({ 0x00, msgid, data.type, data.payload }))
-    msgid = msgid + 1
-  end
-end
-
-function M.deserialize_answers(handle, queue)
-  nio.sleep(500)
-  config.debug("Now listening to server.")
-  local buffer = ""
-  handle:read_start(function(err, chunk)
-    config.debug("Received err,chunk:", err, chunk)
-    if err then
-      error("Error while reading stream: " .. vim.inspect(err))
-    elseif chunk then
-      buffer = buffer .. chunk
-      local parsed, res = pcall(vim.mpack.decode, buffer)
-      if parsed then
-        config.debug("Pushing to queue", buffer, res)
-        buffer = ""
-        nio.run(function()
-          queue.put(res)
-        end)
-      end
-    end
-  end)
-  while not handle:is_closing() do
-    nio.sleep(500)
-  end
-  config.debug("Pushing nil.")
-  nio.run(function()
-    queue.put(nil)
-  end)
-  config.debug("Leaving deserialize_answers.")
-end
-
-function M.treat_incoming(bufnbr, queue)
-  config.debug("Starting treat_incoming")
-  while true do
-    config.debug("Waiting for queue")
-    local value = queue.get()
-    config.debug("Treating: ", value)
-    if value == nil then
-      break
-    elseif value[1] == 2 then -- Received a notification.
-      if value[2] == "handshake" then
-        -- TODO: perform version control here?
-        config.debug("Received Handshake. ", value)
-        config.buf[bufnbr].initialized = true
-      elseif value[2] == "diagnostic" then
-        config.debug("Oh, my. A diagnostic. ")
-        snitch.snitch(bufnbr, value)
-      else 
-        error("Unexpected notification call." .. vim.inspect(value))
-      end
-    elseif value[1] == 1 then -- This is an answer.
-      config.debug("Received Response")
-      snitch.snitch(bufnbr, value)
-    else -- Something unexpected happened.
-      error("Unexpected value received." .. vim.inspect(value))
-    end
-  end
-  config.debug("Leaving treat_incoming")
-end
-
-function M.runclient(bufnbr, socket_path)
-  local socket = uv.new_pipe(true)
-  socket:connect(socket_path)
-  local bufconfig = {
-    socket = socket,
-    path = socket_path,
-    incoming_queue = nio.control.queue(),
-    outgoing_queue = nio.control.queue(),
-    initialized = false,
-    sent_requests = {},
-    lines = '',
-  }
-  config.debug("Preparing configuration for bufnbr=", bufnbr, bufconfig)
-  config.buf[bufnbr] = bufconfig
-  nio.run(function() M.deserialize_answers(socket, bufconfig.incoming_queue) end)
-  nio.run(function () M.treat_incoming(bufnbr, bufconfig.incoming_queue) end)
-  while not config.buf[bufnbr].initialized do
-    nio.sleep(200)
-  end
-  nio.run(function() M.serialize_requests(socket, bufconfig.outgoing_queue) end)
-end
-
-function M.bufconfig(bufnbr, force, settings)
-  if bufnbr == nil then
-    bufnbr = vim.api.nvim_get_current_buf()
-  end
-  if force == nil then
-    force = false
-  end
-  if settings == nil then
-    settings = {evalbyblocks = config.eval_by_blocks }
-  end
-
-  local current_config = config.buf[bufnbr]
-
-  if current_config ~= nil then
-    local closed = current_config.socket:is_closing()
-    if not closed and not force then
-      return 0
-    elseif not closed and force then
-      current_config.socket:close()
-    end
-  end
-
-  local socket_path = M.choosesocket()
-  if socket_path == nil then
-    return -1
-  end
-  nio.run(function() M.runclient(vim.api.nvim_get_current_buf(), socket_path) end)
-  M.configure_session(settings)
-  return 0
+function M.runclient(bufnbr)
+	local bufconfig = run.buffers[bufnbr]
+	bufconfig.socket = uv.new_pipe(true)
+    log.debug("Connecting socket.")
+	bufconfig.socket:connect(bufconfig.path, function(err)
+		if err ~= nil then
+            log.fatal("Connection error: ", err)
+			error("Could not connect to socket. " .. vim.inspect(err))
+            log.fatal("Setting stop buffer event.")
+			bufconfig.stopped_event.set()
+		end
+        log.trace("Setting connected buffer event.")
+		bufconfig.session_connected_event.set()
+	end)
+	nio.run(function()
+        log.trace("Waiting for session initialization before serialization starts.")
+		bufconfig.session_initialized_event.wait()
+		M.serialize_requests(bufnbr)
+	end)
+	nio.run(function()
+        log.trace("Waiting for session initialization before session configuration.")
+		bufconfig.session_initialized_event.wait()
+		M.configure_session(bufnbr)
+	end)
+	nio.run(function()
+        log.trace("Waiting for session connection before deserialization starts.")
+		bufconfig.session_connected_event.wait()
+		M.deserialize_answers(bufnbr)
+	end)
+	nio.run(function()
+        log.trace("Waiting for session connection before requests treatement starts.")
+		bufconfig.session_connected_event.wait()
+		M.treat_incoming(bufnbr)
+	end)
 end
 
 function M.send(code, firstline, filename)
-  local bufnbr = vim.api.nvim_get_current_buf()
-  if filename == nil then
-    filename = vim.api.nvim_buf_get_name(bufnbr)
-  end
-  -- Clear previous diagnostics
-  local namespace = nio.api.nvim_create_namespace("smuggler")
-  vim.diagnostic.reset(namespace, bufnbr)
-  nio.run(function ()
-    config.buf[bufnbr].outgoing_queue.put({ type="eval", payload={filename, firstline, code }})
-  end)
+	local bufnbr = vim.api.nvim_get_current_buf()
+	if filename == nil then
+		filename = vim.api.nvim_buf_get_name(bufnbr)
+	end
+	-- Clear previous diagnostics
+	local namespace = nio.api.nvim_create_namespace("smuggler")
+	vim.diagnostic.reset(namespace, bufnbr)
+	run.buffers[bufnbr].last_msgid = run.buffers[bufnbr].last_msgid + 1
+	nio.run(function()
+		run.buffers[bufnbr].outgoing_queue.put({
+			msgid = run.buffers[bufnbr].last_msgid,
+			type = "eval",
+			payload = { filename, firstline, code },
+		})
+	end)
+	return run.buffers[bufnbr].last_msgid
 end
 
 function M.interrupt()
-  local bufnbr = vim.api.nvim_get_current_buf()
-  nio.run(function ()
-    config.buf[bufnbr].outgoing_queue.put({ type="interrupt" })
-  end)
+	local bufnbr = vim.api.nvim_get_current_buf()
+	run.buffers[bufnbr].last_msgid = run.buffers[bufnbr].last_msgid + 1
+	nio.run(function()
+		run.buffers[bufnbr].outgoing_queue.put({ msgid = run.buffers[bufnbr].last_msgid, type = "interrupt" })
+	end)
+	return run.buffers[bufnbr].last_msgid
 end
 
 function M.exit()
-  local bufnbr = vim.api.nvim_get_current_buf()
-  nio.run(function ()
-    config.buf[bufnbr].outgoing_queue.put({ type="exit" })
-  end)
+	local bufnbr = vim.api.nvim_get_current_buf()
+	run.buffers[bufnbr].last_msgid = run.buffers[bufnbr].last_msgid + 1
+	nio.run(function()
+		run.buffers[bufnbr].outgoing_queue.put({ msgid = run.buffers[bufnbr].last_msgid, type = "exit" })
+	end)
+	return run.buffers[bufnbr].last_msgid
 end
 
-function M.configure_session(settings)
-  local bufnbr = vim.api.nvim_get_current_buf()
-  nio.run(function ()
-    config.buf[bufnbr].outgoing_queue.put({ type="configure", payload={settings} })
-  end)
+function M.configure_session(bufnbr, settings)
+	if bufnbr == nil then
+		bufnbr = vim.api.nvim_get_current_buf()
+	end
+	if settings == nil then
+		settings = run.buffers[bufnbr].session_settings
+	else
+		vim.tbl_extend("force", run.buffers[bufnbr].session_settings, settings)
+	end
+	run.buffers[bufnbr].last_msgid = run.buffers[bufnbr].last_msgid + 1
+	nio.run(function()
+		run.buffers[bufnbr].outgoing_queue.put({
+			msgid = run.buffers[bufnbr].last_msgid,
+			type = "configure",
+			payload = { settings },
+		})
+	end)
+	return run.buffers[bufnbr].last_msgid
 end
 
 return M

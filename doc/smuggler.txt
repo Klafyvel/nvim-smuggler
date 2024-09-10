@@ -75,9 +75,29 @@ also set the |quickfix| list and open the quickfix window.
   :SmuggleShowDiagnostics
                         Show smuggler's diagnostics.
 
-                                                    *:SmuggleResetDiagnostics*
-  :SmuggleResetDiagnostics
-                        Reset smuggler's diagnostics.
+                                                         *:SmuggleHideLocList*
+  :SmuggleHideLocList
+                        Hide smuggler's diagnostics loclist.
+
+                                                             *:SmuggleLocList*
+  :SmuggleLocList
+                        Show smuggler's diagnostics loclist.
+
+                                                       *:SmuggleHideEvaluated*
+  :SmuggleHideEvaluated
+                        Hide highlight around evaluated chunks.
+
+                                                       *:SmuggleShowEvaluated*
+  :SmuggleShowEvaluated
+                        Show highlight around evaluated chunks.
+
+                                                         *:SmuggleHideResults*
+  :SmuggleHideResults
+                        Hide evaluation results.
+
+                                                         *:SmuggleShowResults*
+  :SmuggleShowResults
+                        Show evaluation results.
 
 ==============================================================================
 LUA API                                                     *smuggler-lua-api*
@@ -89,13 +109,6 @@ The commands listed in |smuggler-usage| call the following lua functions.
 
                                                      *smuggler-lua-send-range*
   send_range(l1, l2)    Send the lines `l1` to `l2`, inclusive and 1-indexed.
-
-                                                      *smuggler-lua-bufconfig*
-  bufconfig(bufnbr, force)
-                        Configure the buffer `bufnbr`. If `force` is set to
-                        `true`, any existing configuration is overwritten. If
-                        a connection was active it is also closed. Will start
-                        a new connection if needed.
 
                                                       *smuggler-lua-interrupt*
   interrupt()           Interrupt the current command.
@@ -155,12 +168,37 @@ The plugin is initialized through its `setup` function, which takes a table as
 its sole argument. The options are the following (given with their default
 values): >
   {
-    mappings = true, -- set to false to disable all mappings.
-    map_smuggle = "<leader>cs", -- Mapping for Smuggle in normal mode.
-    map_smuggle_range = "<leader>cs", -- For SmuggleRange in visual mode.
-    map_smuggle_config = "<leader>ce", -- SmuggleConfig in normal mode.
-    map_smuggle_operator = "gcs", -- SmuggleOperator in normal mode.
-    eval_by_blocks = false, -- Configure each new session eval by block attribute.
+    ui = {
+        mappings = { -- set to false to disable all mappings.
+          smuggle = "<leader>cs", -- Mapping for Smuggle in normal mode.
+          smuggle_range = "<leader>cs", -- For SmuggleRange in visual mode.
+          smuggle_config = "<leader>ce", -- SmuggleConfig in normal mode.
+          smuggle_operator = "gcs", -- SmuggleOperator in normal mode.
+        },
+        evaluated_hl = "MoreMsg", -- highlight group for evaluated chunks.
+        invalidated_hl = "WarningMsg", -- highlight group for invalidated evaluated chunks.
+        result_line_length = 80, -- line length of displayed results.
+        result_hl_group = "DiagnosticVirtualTextInfo", -- highlight group used for results.
+        display_results = true, -- Display evaluation results.
+        display_images = true, -- Display images if `images.nvim` is present.
+        images_height = 10, -- Number of lines an image should occupy.
+    },
+    log = {
+        level = "warn", -- available: trace, debug, info, warn, error, fatal
+        use_file = false, -- output logs to `stdpath("data")/smuggler.log`, e.g. `~/.local/share/nvim/smuggler.log `
+        use_console = true, -- output logs to the console.
+    },
+    buffers = {
+        eval_by_blocks = false, -- Configure each new session eval by block attribute.
+        showdir = vim.fs.dirname(vim.fn.tempname()),
+        iocontext = { -- Julia's IOContext
+        -- (https://docs.julialang.org/en/v1/base/io-network/#Base.IOContext-Tuple%7BIO,%20Pair%7D)
+        -- options to use.
+            compact = true,
+            limit = true,
+            displaysize = {10, 80},
+        },
+    },
   }
 <
 If you use the `rocks.nvim` package manager, you can use the
