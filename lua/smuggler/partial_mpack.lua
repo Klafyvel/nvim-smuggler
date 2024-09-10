@@ -84,12 +84,16 @@ BYTE_FORMATS = {
 -- number of elements to consume, or to a function that yields that answer.
 local LENGTH_DISPATCH = {}
 
+local DEBUG_LABELS = {}
+
 for k, v in pairs(BYTE_FORMATS) do
     if v.tag ~= nil then
         LENGTH_DISPATCH[v.tag] = {v.length, v.final, v.headerlength}
+        DEBUG_LABELS[v.tag] = k
     else 
         for i=v.tagmin,v.tagmax do
             LENGTH_DISPATCH[i] = {v.length, v.final, v.headerlength}
+            DEBUG_LABELS[i] = k
         end
     end
 end
@@ -103,13 +107,13 @@ function M.first_element_length(buffer, offset)
     end
     local first_byte = string.byte(buffer, offset)
     local length, isfinal, headerlength = unpack(LENGTH_DISPATCH[first_byte])
-    log.trace("First element length determination. First byte = ", first_byte, " length=", length)
     local result = 0
     local success = true
     if type(length) ~= "number" then
         length = length(buffer, offset)
         success = length ~= nil
     end
+    log.trace("First element length determination. This is a ", DEBUG_LABELS[first_byte], " First byte = ", first_byte, " length=", length, " headerlength=", headerlength, " isfinal=", isfinal)
     if  success then
         if isfinal then -- The length is a length in bytes
             result = length + headerlength
@@ -117,15 +121,18 @@ function M.first_element_length(buffer, offset)
         else -- This is a container, the length is in elements
             log.trace("Iterating through a container.")
             result = headerlength
-            buffer_position = offset + headerlength
+            local buffer_position = offset + headerlength
             for i=1,length do
+                log.trace("Doing element ", i, " of ", DEBUG_LABELS[first_byte])
                 local element_success, element_length = M.first_element_length(buffer, buffer_position)
                 if not element_success then
                     success = false
                     break
                 end
+                log.trace("Adding length ", element_length, " to ", DEBUG_LABELS[first_byte])
                 result = result + element_length
                 buffer_position = buffer_position + element_length
+                log.trace("full container is :", string.sub(buffer, offset, buffer_position-1))
             end
             if success then
                 success = result <= #buffer-offset+1
@@ -141,6 +148,7 @@ function M.decode_one(buffer)
     if success and (length <= #buffer) then
         log.trace("Decoding for length ", length)
         local chunk = string.sub(buffer, 1, length)
+        log.trace("Chunk is:", chunk)
         success, result = pcall(vim.mpack.decode, chunk)
     else 
         success = false
