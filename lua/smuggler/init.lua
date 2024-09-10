@@ -1,9 +1,15 @@
 local smuggler = {}
+local log = require("smuggler.log")
+
+if vim.fn.has("nvim-0.10") ~= 1 then
+    log.warn("Neovim ≥ 0.10 is required.")
+    smuggler.setup = function(opts) end
+    return smuggler
+end
 
 local protocol = require("smuggler.protocol")
 local slime = require("smuggler.reslime")
 local smuggler_ui = require("smuggler.ui")
-local log = require("smuggler.log")
 
 smuggler.send_range = slime.send_range
 smuggler.send_lines = slime.send_lines

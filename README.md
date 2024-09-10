@@ -9,6 +9,9 @@
 
 Neo-Vim companion plugin for [REPLSmuggler.jl](https://github.com/klafyvel/REPLSmuggler.jl). Send code to your Julia REPL, and get Neo-Vim diagnostics in return.
 
+> [!WARNING]
+> NeoVim 0.10 or later is required.
+
 
 ## Demo
 
