@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.1](https://github.com/Klafyvel/nvim-smuggler/compare/v0.4.0...v0.4.1) (2024-09-11)
+
+
+### Bug Fixes
+
+* Fix SmuggleHideEvaluated command. ([59bd4ca](https://github.com/Klafyvel/nvim-smuggler/commit/59bd4ca5770b9716fac32110a1179612b17ac659))
+* **neovim version:** Add checks for neovim version. ([d7b1e2d](https://github.com/Klafyvel/nvim-smuggler/commit/d7b1e2d919284e2441d4be9d866341886f02adde))
+* **protocol:** Fix nested array de-serizalization. ([116d685](https://github.com/Klafyvel/nvim-smuggler/commit/116d685f51e5c3ff2a4e3c74c321e4833a127284))
+
+
+### Miscellaneous Chores
+
+* release 0.4.1 ([9cdf8c5](https://github.com/Klafyvel/nvim-smuggler/commit/9cdf8c5dc1dae3cb8da24572ffdedfea0b2b0a6f))
+
 ## [0.4.0](https://github.com/Klafyvel/nvim-smuggler/compare/v0.3.0...v0.4.0) (2024-09-10)
 
 
