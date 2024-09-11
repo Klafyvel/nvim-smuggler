@@ -223,12 +223,19 @@ end
 --- this triggers the invalidation of the block even though it shouldn't...
 function M.invalidate_changed_chunks(buffer)
 	log.debug("Invalidating!")
-	local tmp = vim.api.nvim_buf_get_mark(buffer.number, "[")
-	local rowstart = tmp[1]
-	local colstart = tmp[2]
-	tmp = vim.api.nvim_buf_get_mark(buffer.number, "]")
-	local rowstop = tmp[1]
-	local colstop = tmp[2]
+	--local tmp = vim.api.nvim_buf_get_mark(buffer.number, "[")
+	--local rowstart = tmp[1]
+	--local colstart = tmp[2]
+	--tmp = vim.api.nvim_buf_get_mark(buffer.number, "]")
+	--local rowstop = tmp[1]
+	--local colstop = tmp[2]
+
+    local cur = vim.api.nvim_win_get_cursor(0)
+    local rowstart = cur[1]
+    local colstart = cur[2]
+	local rowstop = cur[1]
+	local colstop = cur[2]
+
     local changed_chunk = M.chunk(rowstart, rowstop, colstart, colstop)
     log.debug({rowstart=rowstart, colstart=colstart, rowstop=rowstop, colstop=colstop})
 	for msgid, chunk in M.find_intersected_chunks(buffer, changed_chunk) do
