@@ -93,7 +93,7 @@ function ui.create_user_commands()
 		desc = "Hide smuggler's diagnostics loclist.",
 	})
 	vim.api.nvim_create_user_command("SmuggleHideEvaluated", function(_)
-		ui.hidechunk_highlights(vim.api.nvim_get_current_buf())
+		ui.hide_chunk_highlights(vim.api.nvim_get_current_buf())
 	end, {
 		desc = "Hide highlight around evaluated chunks.",
 	})
