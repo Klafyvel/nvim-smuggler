@@ -65,6 +65,7 @@ values):
         display_results = true, -- Display evaluation results.
         display_images = true, -- Display images if `images.nvim` is present.
         images_height = 10, -- Number of lines an image should occupy.
+        eval_sign_text = "│", -- Symbol in signcolumn to mark evaluated/invalidated , set to "" to disable
     },
     log = {
         level = "warn", -- available: trace, debug, info, warn, error, fatal

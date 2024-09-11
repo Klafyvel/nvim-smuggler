@@ -166,7 +166,7 @@ function ui.highlight_chunk(bufnbr, chunk)
     local opts = {
         end_row = chunk.linestop - 1,
         end_col = chunk.colstop,
-        sign_text = "│",
+        sign_text = config.ui.eval_sign_text,
         sign_hl_group = hl_group,
         end_right_gravity = true,
         right_gravity=false
