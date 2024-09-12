@@ -438,9 +438,15 @@ function ui.hide_diagnostic_loclist()
 end
 
 function ui.init_buffer(bufnbr)
-	vim.api.nvim_create_autocmd({ "TextChanged", "TextChangedI" }, {
+	vim.api.nvim_create_autocmd({ "TextChangedI" }, {
 		callback = function(args)
-			run.buffers[bufnbr].update_chunk_display_event.set()
+			run.buffers[bufnbr].update_chunk_cursor_display_event.set()
+		end,
+		buffer = bufnbr,
+	})
+	vim.api.nvim_create_autocmd({ "TextChanged" }, {
+		callback = function(args)
+			run.buffers[bufnbr].update_chunk_mark_display_event.set()
 		end,
 		buffer = bufnbr,
 	})

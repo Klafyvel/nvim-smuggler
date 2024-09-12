@@ -92,7 +92,8 @@ function M.buffer(bufnbr, force, settings)
 		results = {}, -- msgid -> list of results
         diagnostics = {}, -- list of diagnostics from last msgid
 		update_result_display_event = nio.control.event(),
-		update_chunk_display_event = nio.control.event(),
+		update_chunk_cursor_display_event = nio.control.event(),
+		update_chunk_mark_display_event = nio.control.event(),
 		update_diagnostic_display_event = nio.control.event(),
         images_path = images_path, 
         chunks_shown = true,
@@ -117,13 +118,24 @@ function M.buffer(bufnbr, force, settings)
 	end)
 	nio.run(function()
 		while true do
-			nio.first({ buffer.update_chunk_display_event.wait, buffer.stopped_event.wait })
+			nio.first({ buffer.update_chunk_cursor_display_event.wait, buffer.stopped_event.wait })
 			if buffer.stopped_event.is_set() then
 				break
 			end
-			M.invalidate_changed_chunks(buffer)
+			M.invalidate_changed_chunks_cursor(buffer)
 			ui.update_chunk_highlights(buffer.number)
-			buffer.update_chunk_display_event.clear()
+			buffer.update_chunk_cursor_display_event.clear()
+		end
+	end)
+	nio.run(function()
+		while true do
+			nio.first({ buffer.update_chunk_mark_display_event.wait, buffer.stopped_event.wait })
+			if buffer.stopped_event.is_set() then
+				break
+			end
+			M.invalidate_changed_chunks_marks(buffer)
+			ui.update_chunk_highlights(buffer.number)
+			buffer.update_chunk_mark_display_event.clear()
 		end
 	end)
     nio.run(function()
@@ -216,12 +228,12 @@ function M.delete_intersected_chunks(buffer, new_chunk)
         buffer.evaluated_chunks[msgid] = nil
 	end
     buffer.update_result_display_event.set()
-    buffer.update_chunk_display_event.set()
+    --buffer.update_chunk_mark_display_event.set()
 end
 
 --- TODO: The [ marks seem to be uncorrectly placed for the very first edit to a buffer,
 --- this triggers the invalidation of the block even though it shouldn't...
-function M.invalidate_changed_chunks(buffer)
+function M.invalidate_changed_chunks_marks(buffer)
 	log.debug("Invalidating!")
 	local tmp = vim.api.nvim_buf_get_mark(buffer.number, "[")
 	local rowstart = tmp[1]
@@ -229,10 +241,23 @@ function M.invalidate_changed_chunks(buffer)
 	tmp = vim.api.nvim_buf_get_mark(buffer.number, "]")
 	local rowstop = tmp[1]
 	local colstop = tmp[2]
-    local changed_chunk = M.chunk(rowstart, rowstop, colstart, colstop)
-    log.debug({rowstart=rowstart, colstart=colstart, rowstop=rowstop, colstop=colstop})
+
+	local changed_chunk = M.chunk(rowstart, rowstop, colstart, colstop)
+	log.debug({rowstart=rowstart, colstart=colstart, rowstop=rowstop, colstop=colstop})
 	for msgid, chunk in M.find_intersected_chunks(buffer, changed_chunk) do
-        chunk.valid = false
+	    chunk.valid = false
+	end
+end
+
+function M.invalidate_changed_chunks_cursor(buffer)
+	log.debug("Invalidating!")
+	local cur = vim.api.nvim_win_get_cursor(0)
+	local row = cur[1]
+	local col = cur[2]
+	
+	local changed_chunk = M.chunk(row, row, col, col)
+	for msgid, chunk in M.find_intersected_chunks(buffer, changed_chunk) do
+	    chunk.valid = false
 	end
 end
 
