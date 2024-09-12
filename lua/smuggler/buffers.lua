@@ -93,7 +93,7 @@ function M.buffer(bufnbr, force, settings)
         diagnostics = {}, -- list of diagnostics from last msgid
 		update_result_display_event = nio.control.event(),
 		update_chunk_cursor_display_event = nio.control.event(),
-        update_chunk_mark_display_event = nio.control.event(),
+		update_chunk_mark_display_event = nio.control.event(),
 		update_diagnostic_display_event = nio.control.event(),
         images_path = images_path, 
         chunks_shown = true,
@@ -242,22 +242,22 @@ function M.invalidate_changed_chunks_marks(buffer)
 	local rowstop = tmp[1]
 	local colstop = tmp[2]
 
-    local changed_chunk = M.chunk(rowstart, rowstop, colstart, colstop)
-    log.debug({rowstart=rowstart, colstart=colstart, rowstop=rowstop, colstop=colstop})
+	local changed_chunk = M.chunk(rowstart, rowstop, colstart, colstop)
+	log.debug({rowstart=rowstart, colstart=colstart, rowstop=rowstop, colstop=colstop})
 	for msgid, chunk in M.find_intersected_chunks(buffer, changed_chunk) do
-        chunk.valid = false
+	    chunk.valid = false
 	end
 end
 
 function M.invalidate_changed_chunks_cursor(buffer)
 	log.debug("Invalidating!")
-    local cur = vim.api.nvim_win_get_cursor(0)
-    local row = cur[1]
-    local col = cur[2]
-
-    local changed_chunk = M.chunk(row, row, col, col)
+	local cur = vim.api.nvim_win_get_cursor(0)
+	local row = cur[1]
+	local col = cur[2]
+	
+	local changed_chunk = M.chunk(row, row, col, col)
 	for msgid, chunk in M.find_intersected_chunks(buffer, changed_chunk) do
-        chunk.valid = false
+	    chunk.valid = false
 	end
 end
 
