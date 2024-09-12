@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.4.2](https://github.com/Klafyvel/nvim-smuggler/compare/v0.4.1...v0.4.2) (2024-09-12)
+
+
+### Bug Fixes
+
+* evaluated/invalidated signs are optional ([3bcee97](https://github.com/Klafyvel/nvim-smuggler/commit/3bcee970b5ee853e9747008f5a831b9451497801))
+* indent formatting ([60a0b36](https://github.com/Klafyvel/nvim-smuggler/commit/60a0b3648926b30835cdbed95d41b789436b2655))
+* seperate events for textchangedI and textchanged, former uses cursor position to invalidate, latter uses marks ([c9866b8](https://github.com/Klafyvel/nvim-smuggler/commit/c9866b83298538d229344ce04c440cffec63186b))
+* treat textchange as single character chunk , use get_cursor instead of marks [ and ] ([03ec10c](https://github.com/Klafyvel/nvim-smuggler/commit/03ec10c30587d19809b45f8409868b982f7a2fa2))
+
+
+### Documentation
+
+* **vimdoc:** Update configuration in vimdoc to reflect the README. ([8f3ee0d](https://github.com/Klafyvel/nvim-smuggler/commit/8f3ee0d1cd56500ab1c9059a7bd7094e85a936de))
+
+
+### Miscellaneous Chores
+
+* release 0.4.2 ([c8b11c1](https://github.com/Klafyvel/nvim-smuggler/commit/c8b11c1302207584676b7f3f7e773546054d27b3))
+
 ## [0.4.1](https://github.com/Klafyvel/nvim-smuggler/compare/v0.4.0...v0.4.1) (2024-09-11)
 
 
