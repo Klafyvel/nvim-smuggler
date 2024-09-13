@@ -94,17 +94,24 @@ function ui.create_user_commands()
 	})
 	vim.api.nvim_create_user_command("SmuggleHideEvaluated", function(_)
 		ui.hide_chunk_highlights(vim.api.nvim_get_current_buf())
+	    config.ui.show_eval = false 
+	end, {
+		desc = "Hide highlight around evaluated chunks, continues to track evaluated code which can be show with SmuggleShowEvaluated later",
+	})
+	vim.api.nvim_create_user_command("SmuggleDisableEvaluated", function(_)
+		ui.hide_chunk_highlights(vim.api.nvim_get_current_buf())
 	    ui.disable_autocommands(vim.api.nvim_get_current_buf())
+        run.buffers[vim.api.nvim_get_current_buf()].evaluated_chunks={}
 	    config.ui.show_eval = false
 	end, {
-		desc = "Hide highlight around evaluated chunks.",
+		desc = "Disable tracking of evaluated chunks and delete evaluated chunks info from buffer",
 	})
 	vim.api.nvim_create_user_command("SmuggleShowEvaluated", function(_)
 		ui.init_autocommands(vim.api.nvim_get_current_buf())
 	    config.ui.show_eval = true 
 	    ui.place_chunk_highlights(vim.api.nvim_get_current_buf())
 	end, {
-		desc = "Show highlight around evaluated chunks.",
+		desc = "Show highlight around evaluated chunks. Enables tracking of evaluated code if not enabled",
 	})
 	vim.api.nvim_create_user_command("SmuggleHideResults", function(_)
 		ui.hide_evaluation_results(vim.api.nvim_get_current_buf())
