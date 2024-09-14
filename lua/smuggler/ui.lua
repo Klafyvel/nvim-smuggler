@@ -451,18 +451,22 @@ function ui.hide_diagnostic_loclist()
 end
 
 function ui.init_autocommands(bufnbr)
-    run.buffers[bufnbr].aucommands[1] = vim.api.nvim_create_autocmd({ "TextChangedI" }, {
-        callback = function(args)
-            run.buffers[bufnbr].update_chunk_cursor_display_event.set()
-        end,
-        buffer = bufnbr,
-    })
-    run.buffers[bufnbr].aucommands[2] = vim.api.nvim_create_autocmd({ "TextChanged" }, {
-        callback = function(args)
-            run.buffers[bufnbr].update_chunk_mark_display_event.set()
-        end,
-        buffer = bufnbr,
-    })
+    if run.buffers[bufnbr].aucommands[1] == nil then
+        run.buffers[bufnbr].aucommands[1] = vim.api.nvim_create_autocmd({ "TextChangedI" }, {
+            callback = function(args)
+                run.buffers[bufnbr].update_chunk_cursor_display_event.set()
+            end,
+            buffer = bufnbr,
+        })
+    end
+    if run.buffers[bufnbr].aucommands[2] == nil then
+        run.buffers[bufnbr].aucommands[2] = vim.api.nvim_create_autocmd({ "TextChanged" }, {
+            callback = function(args)
+                run.buffers[bufnbr].update_chunk_mark_display_event.set()
+            end,
+            buffer = bufnbr,
+        })
+    end
 end
 
 function ui.disable_autocommands(bufnbr)
@@ -472,6 +476,7 @@ function ui.disable_autocommands(bufnbr)
     if run.buffers[bufnbr].aucommands[2]~=nil then 
         vim.api.nvim_del_autocmd(run.buffers[bufnbr].aucommands[2])
     end
+    run.buffers[bufnbr].aucommands = {}
 end
 
 function ui.init_buffer(bufnbr)
