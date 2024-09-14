@@ -1,0 +1,23 @@
+name: Stylua formatting
+on:
+  push:
+    branches:
+      - 'main'
+      - 'release-'
+    tags:
+      - '*'
+  pull_request:
+jobs:
+  stylua:
+    name: Stylua
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install stylua from crates.io
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: stylua
+          features: lua52
+      - name: Run Stylua
+        run: |
+          git ls-files -z -- '*.lua' | xargs -0 stylua --check
