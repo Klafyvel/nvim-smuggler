@@ -11,6 +11,7 @@ config.ui = {
     mappings = {}, -- Default mappings are defined in their own file.
     images_height = 10,
     eval_sign_text = "│",
+    show_eval = true,
 }
 
 config.log = {

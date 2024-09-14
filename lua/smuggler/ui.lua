@@ -94,13 +94,24 @@ function ui.create_user_commands()
 	})
 	vim.api.nvim_create_user_command("SmuggleHideEvaluated", function(_)
 		ui.hide_chunk_highlights(vim.api.nvim_get_current_buf())
+	    config.ui.show_eval = false 
 	end, {
-		desc = "Hide highlight around evaluated chunks.",
+		desc = "Hide highlight around evaluated chunks, continues to track evaluated code which can be show with SmuggleShowEvaluated later",
+	})
+	vim.api.nvim_create_user_command("SmuggleDisableEvaluated", function(_)
+		ui.hide_chunk_highlights(vim.api.nvim_get_current_buf())
+	    ui.disable_autocommands(vim.api.nvim_get_current_buf())
+        run.buffers[vim.api.nvim_get_current_buf()].evaluated_chunks={}
+	    config.ui.show_eval = false
+	end, {
+		desc = "Disable tracking of evaluated chunks and delete evaluated chunks info from buffer",
 	})
 	vim.api.nvim_create_user_command("SmuggleShowEvaluated", function(_)
-		ui.place_chunk_highlights(vim.api.nvim_get_current_buf())
+		ui.init_autocommands(vim.api.nvim_get_current_buf())
+	    config.ui.show_eval = true 
+	    ui.place_chunk_highlights(vim.api.nvim_get_current_buf())
 	end, {
-		desc = "Show highlight around evaluated chunks.",
+		desc = "Show highlight around evaluated chunks. Enables tracking of evaluated code if not enabled",
 	})
 	vim.api.nvim_create_user_command("SmuggleHideResults", function(_)
 		ui.hide_evaluation_results(vim.api.nvim_get_current_buf())
@@ -197,12 +208,14 @@ function ui.highlight_chunk(bufnbr, chunk)
 end
 
 function ui.place_chunk_highlights(bufnbr)
-	bufnbr = (bufnbr == nil) and vim.api.nvim_get_current_buf() or bufnbr
-	chunks = run.buffers[bufnbr].evaluated_chunks
-	for _, chunk in pairs(chunks) do
-		ui.highlight_chunk(bufnbr, chunk)
-	end
-    run.buffers[bufnbr].chunks_shown = true
+	if config.ui.show_eval then
+		bufnbr = (bufnbr == nil) and vim.api.nvim_get_current_buf() or bufnbr
+		chunks = run.buffers[bufnbr].evaluated_chunks
+		for _, chunk in pairs(chunks) do
+			ui.highlight_chunk(bufnbr, chunk)
+    	end
+        run.buffers[bufnbr].chunks_shown = true
+    end
 end
 
 function ui.update_chunk_highlights(bufnbr)
@@ -415,7 +428,7 @@ function ui.show_diagnostic_loclist(bufnbr)
             namespace=namespace,
             title="REPL error: " .. exception_text,
         })
-    else 
+    else
         vim.ui.select(buffer.diagnostics, {
             format_item = function(item) 
                 return item.text 
@@ -437,19 +450,39 @@ function ui.hide_diagnostic_loclist()
     vim.fn.setloclist(0, {})
 end
 
+function ui.init_autocommands(bufnbr)
+    if run.buffers[bufnbr].aucommands[1] == nil then
+        run.buffers[bufnbr].aucommands[1] = vim.api.nvim_create_autocmd({ "TextChangedI" }, {
+            callback = function(args)
+                run.buffers[bufnbr].update_chunk_cursor_display_event.set()
+            end,
+            buffer = bufnbr,
+        })
+    end
+    if run.buffers[bufnbr].aucommands[2] == nil then
+        run.buffers[bufnbr].aucommands[2] = vim.api.nvim_create_autocmd({ "TextChanged" }, {
+            callback = function(args)
+                run.buffers[bufnbr].update_chunk_mark_display_event.set()
+            end,
+            buffer = bufnbr,
+        })
+    end
+end
+
+function ui.disable_autocommands(bufnbr)
+    if run.buffers[bufnbr].aucommands[1]~=nil then 
+        vim.api.nvim_del_autocmd(run.buffers[bufnbr].aucommands[1])
+    end
+    if run.buffers[bufnbr].aucommands[2]~=nil then 
+        vim.api.nvim_del_autocmd(run.buffers[bufnbr].aucommands[2])
+    end
+    run.buffers[bufnbr].aucommands = {}
+end
+
 function ui.init_buffer(bufnbr)
-	vim.api.nvim_create_autocmd({ "TextChangedI" }, {
-		callback = function(args)
-			run.buffers[bufnbr].update_chunk_cursor_display_event.set()
-		end,
-		buffer = bufnbr,
-	})
-	vim.api.nvim_create_autocmd({ "TextChanged" }, {
-		callback = function(args)
-			run.buffers[bufnbr].update_chunk_mark_display_event.set()
-		end,
-		buffer = bufnbr,
-	})
+	if config.ui.show_eval then
+		ui.init_autocommands(bufnbr)
+	end
 end
 
 return ui

@@ -99,6 +99,7 @@ function M.buffer(bufnbr, force, settings)
         chunks_shown = true,
         results_shown = true,
         diagnostics_shown = true,
+        aucommands = {},
 	}
     run.buffers[bufnbr] = buffer
 	M.choosesocket(buffer)
