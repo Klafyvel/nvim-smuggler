@@ -20,17 +20,17 @@ smuggler.configure_session = protocol.configure_session
 smuggler.config = require("smuggler.config")
 
 function smuggler.setup(opts)
-	opts = opts or {}
+    opts = opts or {}
 
     smuggler.config.init_config(opts)
 
-	smuggler_ui.init_ui()
+    smuggler_ui.init_ui()
 
-	-- Define commands
-	smuggler_ui.create_user_commands()
+    -- Define commands
+    smuggler_ui.create_user_commands()
 
-	-- smuggler mappings
-	smuggler_ui.create_mappings()
+    -- smuggler mappings
+    smuggler_ui.create_mappings()
 
     log.new(smuggler.config.log, true)
 end
