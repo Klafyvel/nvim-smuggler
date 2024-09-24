@@ -97,6 +97,8 @@ also set the |quickfix| list and open the quickfix window.
                         evaluated code tracked so far. Fresh tracking can be
                         started again with :SmuggleShowEvaluated. 
 
+                                                      *:SmuggleDisableEvaluated* 
+
   :SmuggleShowEvaluated
                         Show highlight around evaluated chunks. Enables
                         tracking of evaluated code if currently disabled.
