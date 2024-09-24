@@ -85,11 +85,22 @@ also set the |quickfix| list and open the quickfix window.
 
                                                        *:SmuggleHideEvaluated*
   :SmuggleHideEvaluated
-                        Hide highlight around evaluated chunks.
+                        Hide highlight around evaluated chunks. The plugin 
+                        continues to track lines that have been evaluated in
+                        the background which can be reshown later with
+                        :SmuggleShowEvaluated
+                                                      
+                                                    *:SmuggleDisableEvaluated* 
+  :SmuggleDisableEvaluated
+                        Stop tracking evaluated code and hide highlights
+                        around evaluated chunks. Also deletes record of
+                        evaluated code tracked so far. Fresh tracking can be
+                        started again with :SmuggleShowEvaluated. 
 
                                                        *:SmuggleShowEvaluated*
   :SmuggleShowEvaluated
-                        Show highlight around evaluated chunks.
+                        Show highlight around evaluated chunks. Enables
+                        tracking of evaluated code if currently disabled.
 
                                                          *:SmuggleHideResults*
   :SmuggleHideResults
