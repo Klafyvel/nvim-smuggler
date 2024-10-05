@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.0.0](https://github.com/Klafyvel/nvim-smuggler/compare/v0.4.2...v1.0.0) (2024-10-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* **quickfix:** Using the quickfix list instead of the loclist. Commands were renamed.
+
+### Features
+
+* **quickfix:** Display all stacktraces in the quickfix. ([f83b65b](https://github.com/Klafyvel/nvim-smuggler/commit/f83b65bad80d4a5b338e6bb4c48c199cdd504918))
+
+
+### Bug Fixes
+
+* add SmuggleDisableEvaluated to stop code tracking, SmuggleShowEvaluated starts code tracking and shows evaluated, SmuggleHideEvaluated hides evaluated but continues code tracking. ([d67afd3](https://github.com/Klafyvel/nvim-smuggler/commit/d67afd35266e6ee464e670eee737a9b2bcc3acb4))
+* autocommands are disabled on SmugglerHideEval and reenabled on SmuggleShowEval ([6a2c24e](https://github.com/Klafyvel/nvim-smuggler/commit/6a2c24e28399fdc304e91e6dc33534bf04f2a4a5))
+* documented SmuggleDisableEvaluated , modified documentation for SmuggleHideEvaluated and SmuggleShowEvaluated. removed mention of setting sign char to "" to disable highlighting evaluated code from README ([3d93c99](https://github.com/Klafyvel/nvim-smuggler/commit/3d93c99521789e3e8ab64459aa0d2ab48e273767))
+* minor fix to smuggler.txt regarding SmuggleDisableEvaluated ([a9994e7](https://github.com/Klafyvel/nvim-smuggler/commit/a9994e79689e0353ea2c08552f3e6b8105ba4c34))
+* **ui:** Cleanup autocommands to avoid having zombie `TextChanged` autocommands. ([81dbe39](https://github.com/Klafyvel/nvim-smuggler/commit/81dbe3982fd0fb34ec67d76af1ca217f99686b38))
+* update smuggler.txt ([3413bfb](https://github.com/Klafyvel/nvim-smuggler/commit/3413bfb90667c9b42d3f8dde3051bc6f4fcf4e7f))
+
 ## [0.4.2](https://github.com/Klafyvel/nvim-smuggler/compare/v0.4.1...v0.4.2) (2024-09-12)
 
 
