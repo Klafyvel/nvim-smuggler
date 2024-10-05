@@ -82,15 +82,15 @@ function ui.create_user_commands()
     end, {
         desc = "Show smuggler's diagnostics.",
     })
-    vim.api.nvim_create_user_command("SmuggleLocList", function(_)
-        ui.show_diagnostic_loclist(vim.api.nvim_get_current_buf())
+    vim.api.nvim_create_user_command("SmuggleQuickFix", function(_)
+        ui.set_diagnostic_quickfixlist(vim.api.nvim_get_current_buf())
     end, {
-        desc = "Show smuggler's diagnostics loclist.",
+        desc = "Show smuggler's diagnostics quickfixlist.",
     })
     vim.api.nvim_create_user_command("SmuggleHideLocList", function(_)
-        ui.hide_diagnostic_loclist(vim.api.nvim_get_current_buf())
+        ui.hide_diagnostic_quickfixlist(vim.api.nvim_get_current_buf())
     end, {
-        desc = "Hide smuggler's diagnostics loclist.",
+        desc = "Hide smuggler's diagnostics quickfixlist.",
     })
     vim.api.nvim_create_user_command("SmuggleHideEvaluated", function(_)
         ui.hide_chunk_highlights(vim.api.nvim_get_current_buf())
@@ -147,6 +147,29 @@ function ui.init_ui()
             end)
         end,
     })
+    if config.ui.qf_custom_text then
+        vim.opt.quickfixtextfunc = "v:lua.require'smuggler.ui'.custom_quickfix_display"
+    end
+    if config.ui.qf_custom_display then
+        vim.api.nvim_create_autocmd({ "FileType" }, {
+            callback = function(args)
+                if args.match == "qf" then
+                    vim.cmd([[
+                    syntax clear
+                    syntax region qfJuliaLineNr start="\[" end="\]" 
+                    syntax match qfJuliaFunc "\s.\+\s@"me=e-1,he=e-1 
+                    syntax region qfJuliaPos start="@"rs=e,hs=e end="$"
+
+                    highlight! default link qfJuliaLineNr   LineNr
+                    highlight! default link qfJuliaFunc     Error
+                    highlight! default link qfJuliaPos	    Directory
+                    setlocal nonumber norelativenumber
+                    setlocal colorcolumn = ""
+                    ]])
+                end
+            end,
+        })
+    end
 end
 
 function ui.hide_chunk_highlights(bufnbr)
@@ -432,18 +455,67 @@ function ui.hide_diagnostics(bufnbr)
     buffer.diagnostics_shown = false
 end
 
-function ui.show_diagnostic_loclist(bufnbr)
+function ui.make_quickfix_list(diagnostic)
+    local list = {}
+    for stackidx, stackrow in ipairs(diagnostic.stacktrace) do
+        local module
+        if stackrow[4] == vim.NIL then
+            module = nil
+        else
+            module = stackrow[4]
+        end
+        list[#list + 1] = {
+            filename = stackrow[1],
+            lnum = stackrow[2],
+            col = 0,
+            text = stackrow[3],
+            type = "E",
+            nr = stackidx,
+            module = module,
+        }
+    end
+    vim.fn.setqflist({}, " ", { title = diagnostic.text, items = list })
+end
+
+-- Meant to be used with `:help quickfix-window-function`
+-- Do something like vim.opt.quickfixtextfunc = "v:lua.require'smuggler.ui'.custom_quickfix_display"
+function ui.custom_quickfix_display(opt)
+    local items = vim.fn.getqflist({ id = opt.id, items = 1 }).items
+    local l = {}
+    for i = opt.start_idx, opt.end_idx do
+        local module
+        if config.ui.qf_skip_base == true and items[i].module == "Base" then
+            goto continue
+        end
+        if items[i].module == "" then
+            module = ""
+        else
+            module = items[i].module .. " "
+        end
+        l[#l + 1] = "["
+            .. i
+            .. "] "
+            .. items[i].text
+            .. " @ "
+            .. module
+            .. vim.fn.bufname(items[i].bufnr)
+            .. ":"
+            .. items[i].lnum
+        ::continue::
+    end
+    return l
+end
+
+function ui.set_diagnostic_quickfixlist(bufnbr, showlast)
     bufnbr = (bufnbr == nil) and vim.api.nvim_get_current_buf() or bufnbr
     local buffer = run.buffers[bufnbr]
     local namespace = nio.api.nvim_create_namespace("smuggler")
-    if #buffer.diagnostics == 0 then
+    if buffer == nil or #buffer.diagnostics == 0 then
         return
     elseif #buffer.diagnostics == 1 then
-        local exception_text = buffer.diagnostics[1].text
-        vim.diagnostic.setloclist({
-            namespace = namespace,
-            title = "REPL error: " .. exception_text,
-        })
+        ui.make_quickfix_list(buffer.diagnostics[1])
+    elseif showlast == true then
+        ui.make_quickfix_list(#buffer.diagnostics)
     else
         vim.ui.select(buffer.diagnostics, {
             format_item = function(item)
@@ -453,17 +525,18 @@ function ui.show_diagnostic_loclist(bufnbr)
             if item == nil then
                 return
             else
-                vim.diagnostic.setloclist({
-                    namespace = namespace,
-                    title = "REPL error: " .. item.text,
-                })
+                ui.make_quickfix_list(item)
             end
         end)
     end
+    if config.ui.qf_auto_open then
+        vim.cmd("cope")
+    end
 end
 
-function ui.hide_diagnostic_loclist()
-    vim.fn.setloclist(0, {})
+function ui.hide_diagnostic_quickfixlist()
+    vim.fn.setqflist({}, "r")
+    vim.cmd("cclose")
 end
 
 function ui.init_autocommands(bufnbr)
