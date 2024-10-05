@@ -146,6 +146,9 @@ function M.buffer(bufnbr, force, settings)
                 break
             end
             ui.show_diagnostics(buffer.number)
+            if config.ui.qf_auto_refresh then
+                ui.set_diagnostic_quickfixlist(buffer.number, true)
+            end
             buffer.update_diagnostic_display_event.clear()
         end
     end)

@@ -12,6 +12,11 @@ config.ui = {
     images_height = 10,
     eval_sign_text = "│",
     show_eval = true,
+    qf_skip_base = false,
+    qf_auto_refresh = true,
+    qf_auto_open = false,
+    qf_custom_text = false,
+    qf_custom_display = false,
 }
 
 config.log = {

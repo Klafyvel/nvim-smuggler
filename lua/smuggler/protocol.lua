@@ -1,7 +1,7 @@
 local M = {}
 
 -- SemVer protocol version compatibility
-M.PROTOCOL_VERSION = vim.version.parse("0.4.x")
+M.PROTOCOL_VERSION = vim.version.parse("0.5.x")
 
 local uv = vim.loop
 local nio = require("nio")

@@ -20,9 +20,10 @@ CONTENTS                                                   *smuggler-contents*
   2. Lua API .............................................. |smuggler-lua-api|
   3. Mappings ............................................ |smuggler-mappings|
   4. Configuration .................................. |smuggler-configuration|
-  4. License .............................................. |smuggler-license|
-  5. Contributing .................................... |smuggler-contributing|
-  6. Credits .............................................. |smuggler-credits|
+  5. Quickfix list ....................................... |smuggler-quickfix|
+  6. License .............................................. |smuggler-license|
+  7. Contributing .................................... |smuggler-contributing|
+  8. Credits .............................................. |smuggler-credits|
 
 ==============================================================================
 USAGE                                                         *smuggler-usage*
@@ -75,14 +76,14 @@ also set the |quickfix| list and open the quickfix window.
   :SmuggleShowDiagnostics
                         Show smuggler's diagnostics.
 
-                                                         *:SmuggleHideLocList*
-  :SmuggleHideLocList
-                        Hide smuggler's diagnostics loclist.
+                                                         *:SmuggleHideQuickFix*
+  :SmuggleHideQuickFix
+                        Hide smuggler's diagnostics quickfix.
 
-                                                             *:SmuggleLocList*
-  :SmuggleLocList
-                        Show smuggler's diagnostics loclist.
-
+                                                             *:SmuggleQuickFix*
+  :SmuggleQuickFix
+                        Set the quickfix list to the diagnostics received by
+                        smuggler. See also |smuggler-quickfix|.
                                                        *:SmuggleHideEvaluated*
   :SmuggleHideEvaluated
                         Hide highlight around evaluated chunks. The plugin 
@@ -197,6 +198,11 @@ values): >
         images_height = 10, -- Number of lines an image should occupy.
         eval_sign_text = "│", -- Symbol in signcolumn to mark evaluated/invalidated , set to "" to disable
         show_eval = true, -- If set to false, do not attempt to track modifications in evaluated code chunks.
+        qf_skip_base = false, -- If true, do not show errors in `Base`.
+        qf_auto_refresh = false, -- If true, the quickfix list is refreshed each time an error is smuggled.
+        qf_auto_open = false, -- If true, the quickfix window is opened each time nvim-smuggler refreshes the quickfix window.
+        qf_custom_text = false, -- If true, the quickfix text will be altered to look like Julia REPL Exception printing.
+        qf_custom_display = false, -- If true, the quickfix window will be given an opinionated look (works with qf_custom_text).
     },
     log = {
         level = "warn", -- available: trace, debug, info, warn, error, fatal
@@ -233,6 +239,21 @@ directly with the installation: >
     dependencies = { "nvim-neotest/nvim-nio" },
   }
 >
+==============================================================================
+QUICKFIX LIST                                              *smuggler-quickfix*
+
+The |quickfix| list is a powerful tool to navigate between errors. You can
+populate the list manually using the |:SmuggleQuickFix|. However, if you are
+relying on the quickfix list, you can have it automatically populated when an
+error is received by setting the `qf_auto_refresh` and `qf_auto_open` options
+in the configuration.
+
+The default display of the quickfix list in NeoVim looks different from
+standard REPL errors. You can override this using the provided configuration
+options `qf_custom_text` and `qf_custom_display`.
+If you are unhappy with the highlighting provided you can set your own 
+highlights using the `qfJuliaLineNr`, `qfJuliaFunc`, and `qfJuliaPos` highlight groups.
+
 ==============================================================================
 LICENSE                                                     *smuggler-license*
 
