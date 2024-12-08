@@ -5,9 +5,7 @@ M.PROTOCOL_VERSION = vim.version.parse("0.5.x")
 
 local uv = vim.loop
 local nio = require("nio")
-local config = require("smuggler.config")
 local snitch = require("smuggler.snitch")
-local buffers = require("smuggler.buffers")
 local run = require("smuggler.run")
 local log = require("smuggler.log")
 local mpack = require("smuggler.partial_mpack")
@@ -16,6 +14,7 @@ function M.serialize_requests(bufnbr)
     local bufconfig = run.buffers[bufnbr]
     local queue = bufconfig.outgoing_queue
     local handle = bufconfig.socket
+    log.trace("Starting request serialization thread.")
     while not bufconfig.stopped_event.is_set() do
         local data = queue.get()
         if data.payload == nil then
@@ -79,7 +78,7 @@ function M.deserialize_answers(bufnbr)
     end)
 end
 
-function format_version(ver)
+function M.format_version(ver)
     return string.format("%d.%d.%d", ver.major, ver.minor, ver.patch)
 end
 
@@ -93,22 +92,23 @@ function M.verify_protocol(handshake)
     if vim.version.gt(M.PROTOCOL_VERSION, serverprotocolversion) then
         log.fatal(
             "The server uses version: "
-                .. format_version(serverprotocolversion)
+                .. M.format_version(serverprotocolversion)
                 .. " and we expect: "
-                .. format_version(M.PROTOCOL_VERSION)
+                .. M.format_version(M.PROTOCOL_VERSION)
                 .. ". Consider upgrading REPLSmuggler.jl."
         )
         success = false
     elseif vim.version.lt(M.PROTOCOL_VERSION, serverprotocolversion) then
         log.fatal(
             "The server uses version: "
-                .. format_version(serverprotocolversion)
+                .. M.format_version(serverprotocolversion)
                 .. " and we expect: "
-                .. format_version(M.PROTOCOL_VERSION)
+                .. M.format_version(M.PROTOCOL_VERSION)
                 .. ". Consider upgrading nvim-smuggler."
         )
         success = false
     end
+    log.trace("Protocol verification success status:", success)
     return success
 end
 
@@ -161,22 +161,34 @@ function M.runclient(bufnbr)
     end)
     nio.run(function()
         log.trace("Waiting for session initialization before serialization starts.")
-        bufconfig.session_initialized_event.wait()
+        nio.first({ bufconfig.session_initialized_event.wait, bufconfig.stopped_event.wait })
+        if bufconfig.stopped_event.is_set() then
+            return
+        end
         M.serialize_requests(bufnbr)
     end)
     nio.run(function()
         log.trace("Waiting for session initialization before session configuration.")
-        bufconfig.session_initialized_event.wait()
+        nio.first({ bufconfig.session_initialized_event.wait, bufconfig.stopped_event.wait })
+        if bufconfig.stopped_event.is_set() then
+            return
+        end
         M.configure_session(bufnbr)
     end)
     nio.run(function()
         log.trace("Waiting for session connection before deserialization starts.")
-        bufconfig.session_connected_event.wait()
+        nio.first({ bufconfig.session_connected_event.wait, bufconfig.stopped_event.wait })
+        if bufconfig.stopped_event.is_set() then
+            return
+        end
         M.deserialize_answers(bufnbr)
     end)
     nio.run(function()
         log.trace("Waiting for session connection before requests treatement starts.")
-        bufconfig.session_connected_event.wait()
+        nio.first({ bufconfig.session_connected_event.wait, bufconfig.stopped_event.wait })
+        if bufconfig.stopped_event.is_set() then
+            return
+        end
         M.treat_incoming(bufnbr)
     end)
 end
@@ -216,6 +228,7 @@ function M.exit(bufnbr)
 end
 
 function M.configure_session(bufnbr, settings)
+    log.trace("Configuring session for buffer", bufnbr)
     if bufnbr == nil then
         bufnbr = vim.api.nvim_get_current_buf()
     end
