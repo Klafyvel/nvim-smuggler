@@ -175,7 +175,7 @@ end
 function ui.hide_chunk_highlights(bufnbr)
     bufnbr = (bufnbr == nil) and vim.api.nvim_get_current_buf() or bufnbr
     local namespace = nio.api.nvim_create_namespace("smuggler")
-    for i, chunk in pairs(run.buffers[bufnbr].evaluated_chunks) do
+    for _, chunk in pairs(run.buffers[bufnbr].evaluated_chunks) do
         if chunk.extmark ~= nil then
             local extmark = vim.api.nvim_buf_get_extmark_by_id(bufnbr, namespace, chunk.extmark, { details = true })
             if #extmark == 0 then -- failed to retrieve the extmark.
@@ -185,15 +185,8 @@ function ui.hide_chunk_highlights(bufnbr)
                         .. ". That's likely a bug in nvim-smuggler"
                 )
             else
-                vim.api.nvim_buf_set_extmark(bufnbr, namespace, extmark[1], extmark[2], {
-                    id = chunk.extmark,
-                    end_row = extmark[3].end_row,
-                    end_col = extmark[3].end_col,
-                    sign_text = "",
-                    sign_hl_group = "",
-                    end_right_gravity = true,
-                    right_gravity = false,
-                })
+                vim.api.nvim_buf_del_extmark(bufnbr, namespace, chunk.extmark)
+                chunk.extmark = nil
             end
         end
     end
@@ -249,7 +242,7 @@ end
 function ui.place_chunk_highlights(bufnbr)
     if config.ui.show_eval then
         bufnbr = (bufnbr == nil) and vim.api.nvim_get_current_buf() or bufnbr
-        chunks = run.buffers[bufnbr].evaluated_chunks
+        local chunks = run.buffers[bufnbr].evaluated_chunks
         for _, chunk in pairs(chunks) do
             ui.highlight_chunk(bufnbr, chunk)
         end
@@ -452,6 +445,14 @@ function ui.hide_diagnostics(bufnbr)
     local buffer = run.buffers[bufnbr]
     local namespace = nio.api.nvim_create_namespace("smuggler")
     vim.diagnostic.hide(namespace, bufnbr)
+    buffer.diagnostics_shown = false
+end
+
+function ui.reset_diagnostics(bufnbr)
+    bufnbr = (bufnbr == nil) and vim.api.nvim_get_current_buf() or bufnbr
+    local buffer = run.buffers[bufnbr]
+    local namespace = nio.api.nvim_create_namespace("smuggler")
+    vim.diagnostic.reset(namespace, bufnbr)
     buffer.diagnostics_shown = false
 end
 

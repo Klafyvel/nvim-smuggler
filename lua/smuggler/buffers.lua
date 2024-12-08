@@ -70,7 +70,7 @@ function M.buffer(bufnbr, force, settings)
         if not closed and not force then
             return current_config
         elseif not closed and force then
-            current_config.socket:close()
+            M.terminate(current_config)
         end
     end
     local bufname = vim.fn.bufname(bufnbr)
@@ -153,11 +153,26 @@ function M.buffer(bufnbr, force, settings)
         end
     end)
     nio.run(function()
+        buffer.stopped_event.wait()
+        log.debug("Closing buffer", buffer.number)
+        ui.hide_chunk_highlights(buffer.number)
+        ui.hide_evaluation_results(buffer.number)
+        ui.reset_diagnostics(buffer.number)
+        ui.disable_autocommands(buffer.number)
+        if buffer.socket ~= nil then
+            buffer.socket:close()
+        end
+    end)
+    nio.run(function()
         buffer.socket_chosen_event.wait()
         protocol.runclient(buffer.number)
     end)
     ui.init_buffer(bufnbr)
     return buffer
+end
+
+function M.terminate(buffer)
+    buffer.stopped_event.set()
 end
 
 function M.chunk(linestart, linestop, colstart, colstop, valid)
