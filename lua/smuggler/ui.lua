@@ -208,6 +208,7 @@ function ui.highlight_chunk(bufnbr, chunk)
         opts.hl_group = "TermCursor"
     end
     if chunk.extmark == nil then
+        log.debug("Creating mark for chunk:", chunk)
         local extmark_id = vim.api.nvim_buf_set_extmark(bufnbr, namespace, chunk.linestart - 1, chunk.colstart, opts)
         if extmark_id == -1 then
             error("Could not place extmark for chunk" .. vim.inspect(chunk) .. " at line " .. chunk.linestart)
@@ -243,7 +244,7 @@ function ui.place_chunk_highlights(bufnbr)
     if config.ui.show_eval then
         bufnbr = (bufnbr == nil) and vim.api.nvim_get_current_buf() or bufnbr
         local chunks = run.buffers[bufnbr].evaluated_chunks
-        for _, chunk in pairs(chunks) do
+        for msgid, chunk in pairs(chunks) do
             ui.highlight_chunk(bufnbr, chunk)
         end
         run.buffers[bufnbr].chunks_shown = true
