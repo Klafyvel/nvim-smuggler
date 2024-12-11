@@ -124,6 +124,7 @@ function M.buffer(bufnbr, force, settings)
                 break
             end
             M.invalidate_changed_chunks_cursor(buffer)
+            M.synchronize_chunks_with_marks(buffer)
             ui.update_chunk_highlights(buffer.number)
             buffer.update_chunk_cursor_display_event.clear()
         end
@@ -135,6 +136,7 @@ function M.buffer(bufnbr, force, settings)
                 break
             end
             M.invalidate_changed_chunks_marks(buffer)
+            M.synchronize_chunks_with_marks(buffer)
             ui.update_chunk_highlights(buffer.number)
             buffer.update_chunk_mark_display_event.clear()
         end
@@ -230,31 +232,61 @@ function M.find_intersected_chunks(buffer, chunk)
     end)
 end
 
-function M.delete_intersected_chunks(buffer, new_chunk)
+function M.delete_chunk(buffer, msgid)
     local namespace = nio.api.nvim_create_namespace("smuggler")
-    for msgid, chunk in M.find_intersected_chunks(buffer, new_chunk) do
-        if buffer.results[msgid] ~= nil then
-            for _, result in ipairs(buffer.results[msgid]) do
-                if result.mark_id ~= nil then
-                    vim.api.nvim_buf_del_extmark(buffer.number, namespace, result.mark_id)
+    if buffer.results[msgid] ~= nil then
+        for _, result in ipairs(buffer.results[msgid]) do
+            if result.mark_id ~= nil then
+                vim.api.nvim_buf_del_extmark(buffer.number, namespace, result.mark_id)
+            end
+        end
+    end
+    vim.api.nvim_buf_del_extmark(buffer.number, namespace, buffer.evaluated_chunks[msgid].extmark)
+    if buffer.results[msgid] ~= nil then
+        for _, result in pairs(buffer.results[msgid]) do
+            if result.images ~= nil then
+                for _, img in pairs(result.images) do
+                    img:clear()
                 end
             end
         end
-        vim.api.nvim_buf_del_extmark(buffer.number, namespace, chunk.extmark)
-        if buffer.results[msgid] ~= nil then
-            for _, result in pairs(buffer.results[msgid]) do
-                if result.images ~= nil then
-                    for _, img in pairs(result.images) do
-                        img:clear()
-                    end
-                end
-            end
-            buffer.results[msgid] = nil
-        end
-        buffer.evaluated_chunks[msgid] = nil
+        buffer.results[msgid] = nil
+    end
+    buffer.evaluated_chunks[msgid] = nil
+end
+
+function M.delete_intersected_chunks(buffer, new_chunk)
+    for msgid, _ in M.find_intersected_chunks(buffer, new_chunk) do
+        M.delete_chunk(buffer, msgid)
     end
     buffer.update_result_display_event.set()
     --buffer.update_chunk_mark_display_event.set()
+end
+
+function M.update_intersected_chunks(buffer, changed_chunk)
+    log.debug("Updating for chunk:", changed_chunk)
+    for _, chunk in M.find_intersected_chunks(buffer, changed_chunk) do
+        chunk.valid = false
+        -- Use extmark to track the new length of the buffer (in particular, delete it if empty)
+        log.debug("INvalidating chunk:", chunk)
+    end
+end
+
+function M.synchronize_chunks_with_marks(buffer)
+    local namespace = nio.api.nvim_create_namespace("smuggler")
+    for msgid, chunk in pairs(buffer.evaluated_chunks) do
+        log.debug("Synchronizing chunk ", chunk)
+        local extmark = vim.api.nvim_buf_get_extmark_by_id(buffer.number, namespace, chunk.extmark, { details = true })
+        chunk.linestart = extmark[1] + 1
+        chunk.colstart = extmark[2]
+        chunk.linestop = extmark[3].end_row + 1
+        chunk.colstop = extmark[3].end_col
+        log.debug("New value is", chunk)
+        if (chunk.linestart == chunk.linestop) and (chunk.colstart == chunk.colstop) then
+            log.debug("It's empty, so it gets deleted.")
+            M.delete_chunk(buffer, msgid)
+        end
+    end
 end
 
 --- TODO: The [ marks seem to be uncorrectly placed for the very first edit to a buffer,
@@ -269,10 +301,7 @@ function M.invalidate_changed_chunks_marks(buffer)
     local colstop = tmp[2]
 
     local changed_chunk = M.chunk(rowstart, rowstop, colstart, colstop)
-    log.debug({ rowstart = rowstart, colstart = colstart, rowstop = rowstop, colstop = colstop })
-    for msgid, chunk in M.find_intersected_chunks(buffer, changed_chunk) do
-        chunk.valid = false
-    end
+    M.update_intersected_chunks(buffer, changed_chunk)
 end
 
 function M.invalidate_changed_chunks_cursor(buffer)
@@ -282,9 +311,7 @@ function M.invalidate_changed_chunks_cursor(buffer)
     local col = cur[2]
 
     local changed_chunk = M.chunk(row, row, col, col)
-    for msgid, chunk in M.find_intersected_chunks(buffer, changed_chunk) do
-        chunk.valid = false
-    end
+    M.update_intersected_chunks(buffer, changed_chunk)
 end
 
 return M
