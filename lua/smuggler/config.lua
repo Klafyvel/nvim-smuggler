@@ -34,6 +34,7 @@ config.buffers = {
         limit = true,
         displaysize = { 10, 80 },
     },
+    availablesockets = require("smuggler.utils").getavailablesockets,
 }
 -- End of default config
 
