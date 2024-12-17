@@ -1,0 +1,14 @@
+return {
+    _all = {
+        lua = 'nlua',
+        lpath = "lua/?.lua;lua/?/init.lua",
+    },
+    unit = {
+        ROOT = {'./test/unit/'},
+    },
+    functional = {
+        ROOT = {'./test/e2e/'},
+        pattern = '',  -- No fancy names for E2E tests
+    },
+}
+
