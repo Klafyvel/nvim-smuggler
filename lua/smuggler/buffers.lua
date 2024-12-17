@@ -2,33 +2,23 @@ local M = {}
 
 local nio = require("nio")
 local config = require("smuggler.config")
-local uv = vim.loop
 local run = require("smuggler.run")
 local log = require("smuggler.log")
 
-function M.socketsdir()
-    if vim.fn.has("mac") == 1 then
-        return vim.fn.expand("$HOME") .. "/Library/Application Support/lang.julia.REPLSmuggler/"
-    elseif vim.fn.has("unix") == 1 then
-        return "/run/user/" .. tostring(uv.getuid()) .. "/julia/replsmuggler/"
-    elseif vim.fn.has("win32") == 1 then
-        return "\\\\.\\pipe\\"
-    else
-        error("Unsupported platform.")
-    end
-end
-
-function M.getavailablesockets()
-    local directory = M.socketsdir()
-    local res = {}
-    for v in vim.fs.dir(directory) do
-        res[#res + 1] = directory .. v
-    end
-    return res
-end
-
 function M.choosesocket(buffer)
-    local sockets = M.getavailablesockets()
+    local sockets
+    if type(config.buffers.availablesockets) == "function" then
+        sockets = config.buffers.availablesockets()
+    else
+        sockets = config.buffers.availablesockets
+    end
+    if type(sockets) == "string" then
+        sockets = { sockets }
+    end
+    assert(
+        type(sockets) == "table",
+        "Configuration error. `config.buffers.availablesockets` is expected to be a string, a table of strings, or a function that returns one of the former."
+    )
     if #sockets == 1 and config.buffers.autoselect_single_socket then
         buffer.path = sockets[1]
         buffer.socket_chosen_event.set()

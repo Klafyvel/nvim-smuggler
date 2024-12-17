@@ -214,6 +214,10 @@ values): >
         autoselect_single_socket=true, -- When true, skip socket selection
         -- dialog if there's only one choice possible.
         showdir = vim.fs.dirname(vim.fn.tempname()),
+        -- either a string, a table of string, or a function that returns one
+        -- of the former. This is a list of sockets for nvim-smuggler to try to
+        -- connect to.
+        availablesockets = require("smuggler.utils").getavailablesockets,
         iocontext = { -- Julia's IOContext
         -- (https://docs.julialang.org/en/v1/base/io-network/#Base.IOContext-Tuple%7BIO,%20Pair%7D)
         -- options to use.
