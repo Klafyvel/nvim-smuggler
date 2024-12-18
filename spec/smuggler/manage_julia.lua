@@ -19,17 +19,17 @@ end
 function M.start_repl_process()
     vim.notify("Starting Julia REPL...", vim.log.levels.INFO)
     M.instantiate_env()
-    vim.notify("Julia REPL started.\n", vim.log.levels.DEBUG)
     local stdin = vim.uv.new_pipe()
     local stdout = vim.uv.new_pipe()
     local stderr = vim.uv.new_pipe()
     local handle, pid = vim.uv.spawn(M.JULIA_COMMAND, {
         stdio = { stdin, stdout, stderr },
-        args = { "--project=" .. M.JULIA_ENV_PATH:tostring() },
+        args = { "-i", "--banner=no", "--project=" .. M.JULIA_ENV_PATH:tostring() },
         cwd = M.JULIA_ENV_PATH:tostring(),
     }, function(code, signal)
         print("Julia process exited. Code ", code, ", signal ", signal, ".")
     end)
+    vim.notify("Julia REPL started.\n", vim.log.levels.DEBUG)
     local function close()
         stdin:shutdown(function(_)
             handle:close()
@@ -47,31 +47,47 @@ function M.start_repl_process()
         if timeout == nil then
             timeout = 1000
         end
-        stdout:read_start(function(err, data)
-            if err then
-                -- todo: handle errors
-            elseif data then
-                readline_buffer = readline_buffer .. data
-                local match = string.match(readline_buffer, "^([^\n]*)\n")
-                if match ~= nil then
-                    result = match
-                    local remaining_buffer_length = match:len() - readline_buffer:len() + 1
-                    if remaining_buffer_length == 0 then
-                        readline_buffer = ""
-                    else
-                        readline_buffer = readline_buffer:sub(remaining_buffer_length)
-                    end
-                    stdout:read_stop()
-                end
+        local match = string.match(readline_buffer, "^([^\n]*)\n")
+        if match ~= nil then
+            result = match
+            local remaining_buffer_length = match:len() - readline_buffer:len() + 1
+            if remaining_buffer_length == 0 then
+                readline_buffer = ""
+            else
+                readline_buffer = readline_buffer:sub(remaining_buffer_length)
             end
-        end)
-        local waitsuccess = vim.wait(timeout, function()
-            return not stdout:is_active()
-        end)
-        if not waitsuccess then
-            vim.notify("Waiting for stdout timeouted. Buffer is: " .. vim.inspect(readline_buffer), vim.log.levels.WARN)
+        else
+            stdout:read_start(function(err, data)
+                if err then
+                    -- todo: handle errors
+                elseif data then
+                    readline_buffer = readline_buffer .. data
+                    local match = string.match(readline_buffer, "^([^\n]*)\n")
+                    vim.print("Step, buffer=" .. vim.inspect(readline_buffer) .. " match=" .. vim.inspect(match))
+                    if match ~= nil then
+                        result = match
+                        local remaining_buffer_length = match:len() - readline_buffer:len() + 1
+                        if remaining_buffer_length == 0 then
+                            readline_buffer = ""
+                        else
+                            readline_buffer = readline_buffer:sub(remaining_buffer_length)
+                        end
+                        stdout:read_stop()
+                    end
+                end
+            end)
+            local waitsuccess = vim.wait(timeout, function()
+                return not stdout:is_active()
+            end)
+            if not waitsuccess then
+                vim.notify(
+                    "Waiting for stdout timeouted. Buffer is: " .. vim.inspect(readline_buffer),
+                    vim.log.levels.WARN
+                )
+            end
+            stdout:read_stop()
         end
-        stdout:read_stop()
+        vim.print("Buffer=" .. vim.inspect(readline_buffer) .. ", result=" .. vim.inspect(result))
         return result
     end
     local readline_err_buffer = ""
@@ -80,31 +96,42 @@ function M.start_repl_process()
         if timeout == nil then
             timeout = 1000
         end
-        stderr:read_start(function(err, data)
-            if err then
-                -- todo: handle errors
-            elseif data then
-                readline_err_buffer = readline_err_buffer .. data
-                local match = string.match(readline_err_buffer, "^([^\n]*)\n")
-                if match ~= nil then
-                    result = match
-                    local remaining_buffer_length = match:len() - readline_err_buffer:len() + 1
-                    if remaining_buffer_length == 0 then
-                        readline_err_buffer = ""
-                    else
-                        readline_err_buffer = readline_err_buffer:sub(remaining_buffer_length)
-                    end
-                    stderr:read_stop()
-                end
+        local match = string.match(readline_err_buffer, "^([^\n]*)\n")
+        if match ~= nil then
+            result = match
+            local remaining_buffer_length = match:len() - readline_err_buffer:len() + 1
+            if remaining_buffer_length == 0 then
+                readline_err_buffer = ""
+            else
+                readline_err_buffer = readline_err_buffer:sub(remaining_buffer_length)
             end
-        end)
-        local waitsuccess = vim.wait(timeout, function()
-            return not stderr:is_active()
-        end)
-        if not waitsuccess then
-            vim.notify("Waiting for stderr timeouted.\n", vim.log.levels.WARN)
+        else
+            stderr:read_start(function(err, data)
+                if err then
+                    -- todo: handle errors
+                elseif data then
+                    readline_err_buffer = readline_err_buffer .. data
+                    local match = string.match(readline_err_buffer, "^([^\n]*)\n")
+                    if match ~= nil then
+                        result = match
+                        local remaining_buffer_length = match:len() - readline_err_buffer:len() + 1
+                        if remaining_buffer_length == 0 then
+                            readline_err_buffer = ""
+                        else
+                            readline_err_buffer = readline_err_buffer:sub(remaining_buffer_length)
+                        end
+                        stderr:read_stop()
+                    end
+                end
+            end)
+            local waitsuccess = vim.wait(timeout, function()
+                return not stderr:is_active()
+            end)
+            if not waitsuccess then
+                vim.notify("Waiting for stderr timeouted.\n", vim.log.levels.WARN)
+            end
+            stderr:read_stop()
         end
-        stderr:read_stop()
         return result
     end
     local obj = {
