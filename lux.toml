@@ -1,0 +1,24 @@
+package = "nvim-smuggler"
+version = "0.1.0"
+lua = ">=5.1"
+
+[description]
+summary = "Send code to your Julia REPL, get diagnostics in return."
+maintainer = "Hugo Levy-Falk"
+labels = [ "neovim", "julia", "neovim-plugin", "julialang", "julia-repl" ]
+license = "MIT"
+
+[dependencies]
+"coop.nvim" = "1.2.0-0"
+# Add your dependencies here
+# `busted = ">=2.0"`
+
+[run]
+args = [ "src/main.lua" ]
+
+[build]
+type = "builtin"
+
+[test]
+type = "busted-nlua"
+flags = ["--lpath", "./src/?.lua;./src/?/?.lua;./src/?/init.lua;./utils/?.lua"]

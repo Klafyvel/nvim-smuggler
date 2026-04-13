@@ -1,9 +1,13 @@
+--- A thin wrapper around vim.mpack.decode to be able to decode only the first
+--- object of a MessagePack object.
 local M = {}
--- A thin wrapper around vim.mpack.decode to be able to decode only the first
--- object of a messagepack object.
 
 local log = require("smuggler.log")
 
+--- Return the length of the next object in the buffer when it is given by the
+--- first 4 bits.
+---@param buffer string The buffer in use.
+---@param offset? number The current offset within the buffer.
 function length_4_bits(buffer, offset)
     local first_byte = string.byte(buffer, offset)
     if first_byte ~= nil then
@@ -12,6 +16,10 @@ function length_4_bits(buffer, offset)
         return nil
     end
 end
+--- Return the length of the next object in the buffer when it is given by the
+--- first 5 bits.
+---@param buffer string The buffer in use.
+---@param offset? number The current offset within the buffer.
 function length_5_bits(buffer, offset)
     local first_byte = string.byte(buffer, offset)
     if first_byte ~= nil then
@@ -20,10 +28,18 @@ function length_5_bits(buffer, offset)
         return nil
     end
 end
+--- Return the length of the next object in the buffer when it is given by the
+--- first byte.
+---@param buffer string The buffer in use.
+---@param offset? number The current offset within the buffer.
 function length_1_byte(buffer, offset)
     local second_byte = string.byte(buffer, offset + 1)
     return second_byte
 end
+--- Return the length of the next object in the buffer when it is given by the
+--- first two bytes.
+---@param buffer string The buffer in use.
+---@param offset? number The current offset within the buffer.
 function length_2_bytes(buffer, offset)
     local a, b = string.byte(buffer, offset + 1, offset + 2)
     if a ~= nil and b ~= nil then
@@ -32,6 +48,10 @@ function length_2_bytes(buffer, offset)
         return nil
     end
 end
+--- Return the length of the next object in the buffer when it is given by the
+--- first four bytes.
+---@param buffer string The buffer in use.
+---@param offset? number The current offset within the buffer.
 function length_4_bytes(buffer, offset)
     local a, b, c, d = string.byte(buffer, offset + 1, offset + 2, offset + 3, offset + 4)
     if a ~= nil and b ~= nil and c ~= nil and d ~= nil then
@@ -41,7 +61,17 @@ function length_4_bytes(buffer, offset)
     end
 end
 
-BYTE_FORMATS = {
+---@class smuggler.ByteFormat
+---@field tagmin? number The minimum tag value of the range that uses this format.
+---@field tagmax? number The maximum tag value of the range that uses this format.
+---@field length number|fun(buffer:string, offset?:number):number The length, or a function giving the length, of the tag.
+---@field final boolean True when the tag is final, i.e. it does not represent a container.
+---@field headerlength number Length in bytes of the header.
+---@field tag? number The tag (i.e. first byte) when `tagmin` and `tagmax` are not used.
+
+--- Stores all the byte formats in MessagePack.
+---@type table<string, smuggler.ByteFormat>
+local BYTE_FORMATS = {
     ["positive_fixint"] = { tagmin = 0x00, tagmax = 0x7f, length = 0, final = true, headerlength = 1 },
     ["fixmap"] = {
         tagmin = 0x80,
@@ -102,10 +132,12 @@ BYTE_FORMATS = {
     ["negative_fixint"] = { tagmin = 0xe0, tagmax = 0xff, length = 0, final = true, headerlength = 1 },
 }
 
--- A 255 elements table that maps the first byte of the buffer to either the
--- number of elements to consume, or to a function that yields that answer.
+--- A 255 elements table that maps the first byte of a tag to either the
+--- number of elements to consume, or to a function that yields that answer.
+---@type table<number, [number|fun(buffer:string, offset?:number):number, boolean, number]>
 local LENGTH_DISPATCH = {}
 
+--- For debug purposes only, associate a label to the first byte of a tag to a label of a tag to a label.
 local DEBUG_LABELS = {}
 
 for k, v in pairs(BYTE_FORMATS) do
@@ -120,6 +152,11 @@ for k, v in pairs(BYTE_FORMATS) do
     end
 end
 
+--- Decode the length of the next element to consume.
+---@param buffer string The current buffer.
+---@param offset number The current position in the buffer.
+---@return boolean success # Decoding was a success.
+---@return number result # The length of the first available element.
 function M.first_element_length(buffer, offset)
     if offset == nil then
         offset = 1
@@ -175,6 +212,11 @@ function M.first_element_length(buffer, offset)
     return success, result
 end
 
+--- Decode the first element in the buffer
+---@param buffer string The buffer containing the elements.
+---@return boolean success # Decoding was successful
+---@return any result # The decoded object
+---@return number length # The length of the decoded object within the buffer.
 function M.decode_one(buffer)
     local result = nil
     local success, length = M.first_element_length(buffer)
