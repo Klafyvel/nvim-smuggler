@@ -47,7 +47,7 @@ function M.buffer(bufnbr, force, settings)
     end
     local default_settings = {
         evalbyblocks = config.buffers.eval_by_blocks,
-        showdir = vim.fs.joinpath(config.buffers.showdir, bufnbr),
+        showdir = vim.fs.joinpath(config.buffers.showdir, tostring(bufnbr)),
         iocontext = config.buffers.iocontext,
         enableimages = config.ui.display_images,
     }
