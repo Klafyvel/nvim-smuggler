@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.1](https://github.com/Klafyvel/nvim-smuggler/compare/v0.5.0...v0.5.1) (2026-04-21)
+
+
+### Bug Fixes
+
+* compatibility with neovim 0.12 ([ef363a6](https://github.com/Klafyvel/nvim-smuggler/commit/ef363a62856cdea445dfee96e8aaf4fc87e0ba9e))
+* compatibility with neovim 0.12 ([427cbc8](https://github.com/Klafyvel/nvim-smuggler/commit/427cbc8096ec86ab64b08104b22dc61281b53eaa))
+
 ## [0.5.0](https://github.com/Klafyvel/nvim-smuggler/compare/v0.4.2...v0.5.0) (2025-01-27)
 
 
